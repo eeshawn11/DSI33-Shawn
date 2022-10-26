@@ -1,2 +1,2 @@
 # DSI33-Shawn
- GA 
+Store of GA projects.
