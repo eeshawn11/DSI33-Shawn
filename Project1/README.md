@@ -43,7 +43,7 @@ Based on data provided by CDE, as well as publicly available information, we ana
 The top and bottom performing districts were isolated to identify if there may have been any other factors attributing to their performance.<br><br>
 Cross-referencing available data on student poverty, based on unduplicated count of students who are eligible for Free or Reduced-Price Meals (FRPM), we assessed whether there is any correlation between student poverty and performance.
 
-### Findings
+### Key Findings
 California was ranked 33rd among all the US states based on SAT mean test score, although the state’s SAT participation rate of 63% was higher than the median of 54%.
 
 Among the 335 school districts analysed, there is a very wide range (0 – 92%) for the percentage of students meeting the SAT benchmark. Most districts achieved between 30% to 62% of their students meeting the SAT benchmark.
