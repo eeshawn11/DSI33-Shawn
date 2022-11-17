@@ -59,7 +59,7 @@ Some key insights:
 > * To maximise selling potential, agents can assess the current condition of the properties, obtain quotations from our partner contractors and present the cost-benefit analysis to our clients to determine if they would want to pay for upgrades prior to sale
 
 > **For home buyers**
-
+>
 > * Overall quality of the house is a very important factor to assess when purchasing a home.
 > * Depending on the available budget of our clients, agents can identify whether a property is potentially under or overpriced, as well as identify if there are opportunities to negotiate a better deal based on certain features of the house (or lack thereof).
 > * For example, home owners on a tighter budget could consider properties without a garage, allowing them to potentially cut 5% off the price. 
