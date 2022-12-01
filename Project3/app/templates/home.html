@@ -1,0 +1,46 @@
+<html>
+
+<head>
+	<title>Subreddit Classifier</title>
+	<link rel="stylesheet" type="text/css" href="../static/css/styles.css">
+</head>
+
+<body>
+
+	<header>
+		<div class="container">
+			<div id="brandname">
+				Deploying a Machine Learning App with Flask
+			</div>
+			<h2>Subreddit Post Classifier</h2>
+			<p>
+				This is a demonstration of a machine learning model for classifying between two subreddits.
+				<br>r/<b>csMajors</b> vs r/<b>codingbootcamp</b>
+			</p>
+			<p>
+				The model uses a Multinomial Naive Bayes classifier, trained on posts scrapped from the two subreddits using the Pushshift API.
+			</p>
+		</div>
+	</header>
+
+	<div class="ml-container">
+		<form action="{{ url_for('predict')}}" method="POST">
+			<p>Enter Your Post Here:</p>
+			<textarea name="message" rows="4" cols="50"></textarea>
+			<br />
+
+			<input type="submit" class="btn-info" value="Predict">
+		</form>
+	</div>
+
+	<div class="results">
+		{% if prediction == 1%}
+		<h2 style="color:red;">r/csMajors</h2>
+		{% elif prediction == 0%}
+		<h2 style="color:blue;">r/codingbootcamp</h2>
+		{% endif %}
+	</div>
+
+</body>
+
+</html>
