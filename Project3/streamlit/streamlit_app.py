@@ -9,7 +9,7 @@ from nltk import WordNetLemmatizer
 
 wn = WordNetLemmatizer()
 
-pipe = joblib.load('./subreddit_model.pkl')
+pipe = joblib.load('subreddit_model.pkl')
 
 def clean_text(text):
     '''
