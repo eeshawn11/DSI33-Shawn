@@ -8,7 +8,7 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import nltk
 nltk.download('wordnet')
 
-wn = WordNetLemmatizer()
+wn = nltk.WordNetLemmatizer()
 
 pipe = joblib.load('/app/dsi33-shawn/Project3/streamlit/subreddit_model.pkl')
 
