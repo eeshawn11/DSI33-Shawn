@@ -5,7 +5,7 @@ import numpy as np
 import re
 from string import punctuation
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
-from nltk import WordNetLemmatizer
+import nltk
 nltk.download('wordnet')
 
 wn = WordNetLemmatizer()
