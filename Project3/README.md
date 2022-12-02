@@ -61,6 +61,6 @@ As a proof of concept, we can launch a simple demonstration using `Flask`. We wi
 
 Users can type or paste a length of text and the app will analyze the text to predict which subreddit the content might belong to.
 
-Once the [app](../app/app.py) has been launched in the terminal, we are able to type or paste a section of text in and the model will predict whether the post would classify as r/codingbootcamp or r/csMajors.
+Once the [app](./app/app.py) has been launched in the terminal, we are able to type or paste a section of text in and the model will predict whether the post would classify as r/codingbootcamp or r/csMajors.
 
-![app demo](../images/app_demo.png)
+![app demo](./images/app_demo.png)
