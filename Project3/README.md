@@ -19,7 +19,7 @@ A successful model that is able to accurately classify a user could help to bett
 
 ### Datasets
 
-* [`records_csmajors_codingbootcamp.csv`](./data/records_csmajors_codingbootcamp): Downloaded dataset for reference
+* [`records_csmajors_codingbootcamp.csv`](./data/records_csmajors_codingbootcamp.csv): Downloaded dataset for reference
 
 # Modelling
 ---
