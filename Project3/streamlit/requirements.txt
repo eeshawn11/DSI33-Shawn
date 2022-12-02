@@ -5,5 +5,4 @@ pandas==1.4.4
 regex==2022.7.9
 scikit-image==0.19.2
 scikit-learn==1.0.2
-scikit-learn-intelex==2021.6.0
 streamlit==1.14.0
