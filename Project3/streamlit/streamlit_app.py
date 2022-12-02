@@ -8,15 +8,13 @@ from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import nltk
 nltk.download('wordnet')
 
-wn = nltk.WordNetLemmatizer()
-
 pipe = joblib.load('/app/dsi33-shawn/Project3/streamlit/subreddit_model.pkl')
 
 def clean_text(text):
     '''
     Returns a string that has been cleaned and prepared to use with a vectoriser.
     '''
-    wn = WordNetLemmatizer()
+    wn = nltk.WordNetLemmatizer()
     # add extra stopwords
     extra_stopwords = [
         "im", "ve", "ive", "hello", "view",
