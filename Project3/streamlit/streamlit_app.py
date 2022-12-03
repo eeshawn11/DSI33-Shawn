@@ -84,8 +84,8 @@ st.markdown("""
     """)
 st.markdown("""
         - After prediction, we will return the top 10 features extracted from the input text.
-        - A positive number indicates this feature contributes to the prediction for class 1 (r/codingbootcamp), while the magnitude indicates its importance.
-        - 
+        - A positive number indicates this feature contributes to the prediction for class 1 (r/codingbootcamp), 
+        while the magnitude indicates its importance.
     """)
 st.markdown("---")
 
