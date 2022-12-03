@@ -6,7 +6,7 @@ Showcase of projects completed during the General Assembly Data Science Immersiv
 > ### Project 1 - Standardised Test Analysis
 > An exploratory analysis into SAT 2019 performance in the state of California, United States, to identify districts with the lowest overall student performance so the California Department of Education can recommend programs and better allocate resources to such districts in need.
 >
-> ### Skills demonstrated:
+> #### Skills demonstrated:
 >
 > - Exploratory Data Analysis
 > - Data Visualisation
