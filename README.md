@@ -33,4 +33,4 @@ Showcase of projects completed during the General Assembly Data Science Immersiv
 > - Natural Language Processing using `NLTK` and `RegEx`
 > - Vectorisation with `scikit-learn` Count Vectorizer and TF-IDF Vectorizer
 > - Classification models with `scikit-learn`, e.g. Logistic Regression, Naive Bayes, Random Forest and Support Vector Machine
-> - Python web app deployment with `Flask` and `streamlit`
+> - Python web app deployment with [`Flask`](https://github.com/eeshawn11/DSI33-Shawn/blob/main/Project3/app/app.py) and `streamlit`
