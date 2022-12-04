@@ -31,7 +31,7 @@ df['address'] = df['block'] + ' ' + df['street_name']
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
-    return pd.read_csv('hdb_coords.csv')
+    return pd.read_csv('/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/hdb_coords.csv')
 
 hdb_coordinates = get_coords_df()
 df_merged = df.merge(hdb_coordinates, how='inner', on='address')
