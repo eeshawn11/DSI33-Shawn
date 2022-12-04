@@ -25,7 +25,7 @@ Showcase of projects completed during the General Assembly Data Science Immersiv
 
 
 > ### [Project 3 - Web APIs & NLP](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Project3)
-> Using NLP to create a classification model that is able to accurately classify a Reddit.com post between two subreddits: r/codingbootcamp and r/csMajors. Achieved an F1-score of 93% and deployed a demonstration web app via [streamlit](https://eeshawn11-dsi33-shawn-project3streamlitstreamlit-app-1yjknv.streamlit.app/#subreddit-classification-model).
+> Using NLP to create a classification model that is able to accurately classify a Reddit.com post between two subreddits: r/codingbootcamp and r/csMajors. Achieved an F1-score of 93% and deployed a demonstration web app via [streamlit](https://shawn-nlp-classifier.streamlit.app).
 >
 > #### Skills demonstrated:
 >
@@ -33,4 +33,4 @@ Showcase of projects completed during the General Assembly Data Science Immersiv
 > - Natural Language Processing using `NLTK` and `RegEx`
 > - Vectorisation with `scikit-learn` Count Vectorizer and TF-IDF Vectorizer
 > - Classification models with `scikit-learn`, e.g. Logistic Regression, Naive Bayes, Random Forest and Support Vector Machine
-> - Python web app deployment with [`Flask`](https://github.com/eeshawn11/DSI33-Shawn/blob/main/Project3/app/app.py) and [`streamlit`](https://eeshawn11-dsi33-shawn-project3streamlitstreamlit-app-1yjknv.streamlit.app/#subreddit-classification-model)
+> - Python web app deployment with [`Flask`](https://github.com/eeshawn11/DSI33-Shawn/blob/main/Project3/app/app.py) and [`streamlit`](https://shawn-nlp-classifier.streamlit.app)
