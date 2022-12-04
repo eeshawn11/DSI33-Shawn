@@ -9,7 +9,11 @@ import nltk
 # nltk.download('wordnet')
 # nltk.download('omw-1.4')
 
-pipe = joblib.load('/app/dsi33-shawn/Project3/streamlit/subreddit_model.pkl')
+@st.cache(max_entries=1)
+def load_model():
+    return joblib.load('/app/dsi33-shawn/Project3/streamlit/subreddit_model.pkl')
+
+pipe = load_model()
 
 def clean_text(text):
     '''
@@ -51,6 +55,7 @@ def feature_importances_NB(clf, data):
     delta_log_prob = clf.feature_log_prob_[1, :] - clf.feature_log_prob_[0, :]
     return np.multiply(data, delta_log_prob)
 
+@st.cache(ttl=24*3600)
 def get_top_N_features(pipe, text):
     """
     Returns a dataframe, with the token name and its feature importance to class 1
