@@ -1,0 +1,4 @@
+numpy>=1.22
+pandas==1.4.4
+regex==2022.7.9
+streamlit==1.14.0
