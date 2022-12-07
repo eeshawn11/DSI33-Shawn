@@ -19,7 +19,7 @@ Showcase of projects completed during the General Assembly Data Science Immersiv
 >
 > #### Skills demonstrated:
 >
-> - Feature Engineering and Selection
+> - Feature Engineering and Selection with over 80 features in the dataset
 > - Regression models with `scikit-learn`, e.g. Linear, Lasso, Ridge
 > - Utilising machine learning `Pipeline` and `GridSearchCV` for hyperparameter tuning
 
@@ -34,3 +34,13 @@ Showcase of projects completed during the General Assembly Data Science Immersiv
 > - Vectorisation with `scikit-learn` Count Vectorizer and TF-IDF Vectorizer
 > - Classification models with `scikit-learn`, e.g. Logistic Regression, Naive Bayes, Random Forest and Support Vector Machine
 > - Python web app deployment with [`Flask`](https://github.com/eeshawn11/DSI33-Shawn/blob/main/Project3/app/app.py) and [`streamlit`](https://shawn-nlp-classifier.streamlit.app)
+
+---
+
+> ### [HDB Resale Price Dashboard](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/HDB_Resale_Price) [Ongoing]
+> Exploration of a data set from [Data.gov.sg](https://data.gov.sg/), in particular HDB resale prices from 2017. The main aim is to practise using Python to generate a dashboard with various data visualisations.
+>
+> #### Skills demonstrated:
+>
+> - Data visualisation with `Vega-Altair`
+> - Python web app deployment with [`streamlit`](https://shawn-hdb-resale-viz.streamlit.app/)
