@@ -78,7 +78,7 @@ st.title("Subreddit Classification Model")
 st.markdown("""
         This is a simple web app deployment of a Reddit.com subreddit classifier, 
         built as part of General Assembly Singapore's Data Science Immersive program. 
-        The model uses NLP to classify posts between two related subreddits: *r/codingbootcamp* and *r/csMajors*.
+        The model uses NLP to classify posts between two related subreddits: [*r/codingbootcamp*](https://www.reddit.com/r/codingbootcamp) and [*r/csMajors*](https://www.reddit.com/r/csMajors/).
     """)
 
 st.subheader("Model")
