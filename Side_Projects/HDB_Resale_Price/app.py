@@ -92,7 +92,26 @@ with st.sidebar:
         format = "MMM-Y",
         disabled=True,
     )
-    
+
+# filter df based on selected parameters
+if town_option == 'All':
+    if year == 'All':
+        df_filtered = df_merged
+    else:
+        # df_filtered = df_merged.query('month >= @min_date & month <= @max_date')
+        df_filtered = df_merged.query('month.dt.year == @year')
+else:
+    if year == 'All':
+        df_filtered = df_merged.query('town.str.contains(@town_option)')
+    else:
+    # df_filtered = df_merged.query('month >= @min_date & month <= @max_date & town.str.contains(@town_option)')
+        df_filtered = df_merged.query('month.dt.year == @year & town.str.contains(@town_option)')
+
+# create dataframes for individual plot displays
+map_df = df_filtered.groupby('town').resale_price.median().reset_index()
+median_resale_price = df_filtered.groupby('month').resale_price.median().reset_index()
+resale_transactions = df_filtered.groupby('month').town.count().reset_index()    
+
 # min_date = pd.to_datetime(date_range[0])
 # max_date = pd.to_datetime(date_range[1])
 
@@ -109,28 +128,10 @@ with st.container():
     st.markdown("We utilise the Data.gov.sg API to extract our required data. Let's check out the first 3 rows of our dataset.")
     st.dataframe(df.head(3))
     st.markdown("The dataset provides various key information regarding the HDB flats, including location, flat type and lease information.")
-    st.markdown("We are interested to display the transactions on a map, so we'll need to convert the addresses into coordinates to do so.")
-    st.markdown("Using the [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority, I retrieved and stored the Latitude and Longitude coordinates for all the 12,573 HDB blocks in Singapore.")
-
+    st.markdown("Using the [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority, I retrieved the coordinates of the HDB blocks to plot onto a map.")
+    st.markdown("After performing some transformations on the data:")
+    st.dataframe(df_filtered.head(3))
 st.markdown("---")
-
-# filter df based on selected parameters
-if town_option == 'All':
-    if year == 'All':
-        df_filtered = df_merged
-    else:
-        # df_filtered = df_merged.query('month >= @min_date & month <= @max_date')
-        df_filtered = df_merged.query('month.dt.year == @year')
-else:
-    if year == 'All':
-        df_filtered = df_merged.query('town.str.contains(@town_option)')
-    else:
-    # df_filtered = df_merged.query('month >= @min_date & month <= @max_date & town.str.contains(@town_option)')
-        df_filtered = df_merged.query('month.dt.year == @year & town.str.contains(@town_option)')
-
-map_df = df_filtered.groupby('town').resale_price.median().reset_index()
-median_resale_price = df_filtered.groupby('month').resale_price.median().reset_index()
-resale_transactions = df_filtered.groupby('month').town.count().reset_index()
 
 with st.container():
     # st.subheader(f'{town_option} from {min_date:%b-%Y} to {max_date:%b-%Y}')
