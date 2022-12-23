@@ -84,15 +84,6 @@ with st.sidebar:
         options = years
     )
 
-    date_range = st.slider(
-        label = 'Transaction Date Range', 
-        min_value = df_merged['month'].min().date(),
-        max_value = df_merged['month'].max().date(),
-        value = (df_merged['month'].min().date(), df_merged['month'].max().date()),
-        format = "MMM-Y",
-        disabled=True,
-    )
-
 # filter df based on selected parameters
 if town_option == 'All':
     if year == 'All':
@@ -112,9 +103,6 @@ map_df = df_filtered.groupby('town').resale_price.median().reset_index()
 median_resale_price = df_filtered.groupby('month').resale_price.median().reset_index()
 resale_transactions = df_filtered.groupby('month').town.count().reset_index()    
 
-# min_date = pd.to_datetime(date_range[0])
-# max_date = pd.to_datetime(date_range[1])
-
 with st.container():
     st.title("Singapore HDB Resale Price from 2017")
     st.markdown("This dashboard is inspired by [Inside Airbnb](http://insideairbnb.com/), and is an ongoing project to document my learning to use Streamlit and various plotting libraries to create an interactive dashboard. While this could perhaps be more easily resolved by using PowerBI or Tableau, I am taking the opportunity to explore various Python libraries and understand their documentation.")
@@ -127,16 +115,13 @@ with st.container():
     st.markdown("## Data Extraction & Transformation")
     st.markdown("We utilise the Data.gov.sg API to extract our required data. Let's check out the first 3 rows of our dataset.")
     st.dataframe(df.head(3))
-    st.markdown("The dataset provides various key information regarding the HDB flats, including location, flat type and lease information.")
-    st.markdown("Using the [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority, I retrieved the coordinates of the HDB blocks to plot onto a map.")
-    st.markdown("After performing some transformations on the data:")
+    st.markdown("The dataset provides various key information regarding the HDB flats, including location, flat type and lease information. Using the [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority, I retrieved and added in the coordinates of the HDB blocks to plot onto a map.")
+    st.markdown("After performing some transformations on the data, notice the new columns that have been added.")
     st.dataframe(df_filtered.head(3))
 st.markdown("---")
 
 with st.container():
-    # st.subheader(f'{town_option} from {min_date:%b-%Y} to {max_date:%b-%Y}')
     st.markdown(f'## {town_option} transactions in {year}')
-    # display key metrics
     st.markdown("### Key Metrics")
     # row 1
     met1, met2, met3 = st.columns(3)
