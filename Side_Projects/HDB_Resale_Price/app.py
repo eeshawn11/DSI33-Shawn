@@ -26,14 +26,13 @@ def get_data():
     content = pd.DataFrame(body['result']['records'])
     return content
 
-# consider how to store copy of data since this is updated monthly
 df = get_data()
 df['address'] = df['block'] + ' ' + df['street_name']
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
     return pd.read_csv('/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/hdb_coords.csv')
-    # return pd.read_csv('hdb_coords.csv')
+    # return pd.read_csv('C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/hdb_coords.csv')
 
 hdb_coordinates = get_coords_df()
 df_merged = df.merge(hdb_coordinates, how = 'inner', on = 'address')
@@ -45,6 +44,21 @@ towns = df_merged['town'].unique()
 towns = sorted(towns)
 towns.insert(0, 'All')
 
+years = list(range(df_merged['month'].max().year, df_merged['month'].min().year - 1, -1))
+years.insert(0, 'All')
+
+def round_up(number, nearest: int, direction: bool = True):
+    '''
+    Round number up to the nearest value.
+        Set direction = False to round down instead.
+    '''
+    if direction == True:
+        return int(np.ceil(number / nearest)) * nearest
+    elif direction == False:
+        return int(np.floor(number / nearest)) * nearest
+    else:
+        return None
+
 # create sidebar for filtering dashboard
 with st.sidebar:
     st.header("Filter options")
@@ -53,12 +67,18 @@ with st.sidebar:
         options = towns
     )
 
+    year = st.selectbox(
+        label= 'Year',
+        options = years
+    )
+
     date_range = st.slider(
         label = 'Transaction Date Range', 
         min_value = df_merged['month'].min().date(),
         max_value = df_merged['month'].max().date(),
         value = (df_merged['month'].min().date(), df_merged['month'].max().date()),
         format = "MMM-Y",
+        disabled=True,
     )
     
 min_date = pd.to_datetime(date_range[0])
@@ -72,29 +92,39 @@ with st.container():
 st.markdown("---")
 
 with st.container():
-    st.subheader("Data Extraction & Transformation")
+    st.markdown("## Data Extraction & Transformation")
     st.markdown("We utilise the Data.gov.sg API to extract our required data. Let's check out the first 3 rows of our dataset.")
     st.dataframe(df.head(3))
     st.markdown("The dataset provides various key information regarding the HDB flats, including location, flat type and lease information.")
     st.markdown("We are interested to display the transactions on a map, so we'll need to convert the addresses into coordinates to do so.")
-    st.markdown("using the [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority, I retrieved and stored the Latitude and Longitude coordinates for all the 12,573 HDB blocks in Singapore.")
+    st.markdown("Using the [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority, I retrieved and stored the Latitude and Longitude coordinates for all the 12,573 HDB blocks in Singapore.")
 
 st.markdown("---")
 
 # filter df based on selected parameters
 if town_option == 'All':
-    df_filtered = df_merged.query('month >= @min_date & month <= @max_date')
+    if year == 'All':
+        df_filtered = df_merged
+    else:
+        # df_filtered = df_merged.query('month >= @min_date & month <= @max_date')
+        df_filtered = df_merged.query('month.dt.year == @year')
 else:
-    df_filtered = df_merged.query('month >= @min_date & month <= @max_date & town.str.contains(@town_option)')
+    if year == 'All':
+        df_filtered = df_merged.query('town.str.contains(@town_option)')
+    else:
+    # df_filtered = df_merged.query('month >= @min_date & month <= @max_date & town.str.contains(@town_option)')
+        df_filtered = df_merged.query('month.dt.year == @year & town.str.contains(@town_option)')
 
 with st.container():
+    # st.subheader(f'{town_option} from {min_date:%b-%Y} to {max_date:%b-%Y}')
+    st.markdown(f'## {town_option} transactions in {year}')
     # display key metrics
-    st.subheader("Key Metrics")
+    st.markdown("### Key Metrics")
     # row 1
     met1, met2, met3 = st.columns(3)
     met1.metric(
-        label = 'Transactions',
-        value = numerize(df_filtered['resale_price'].count().item()),
+        label = 'Total Resale Transactions',
+        value = f"{df_filtered['resale_price'].count().item():,}",
         help = 'Total resale transactions during this period'
     )
     met2.metric(
@@ -128,82 +158,134 @@ with st.container():
 st.markdown("---")
 
 with st.container():
-    st.subheader(f'{town_option} from {min_date:%b-%Y} to {max_date:%b-%Y}')
-    tab1, tab2 = st.tabs(['Median Resale Price', 'Flat Type'])
+    # create data source for Altair chart
+    median_resale_price = df_filtered.groupby('month').resale_price.median().reset_index()
+    resale_transactions = df_filtered.groupby('month').town.count().reset_index()
 
-    with tab1:
-        # create data source for Altair chart
-        tab1_source = df_filtered.groupby('month').resale_price.median().reset_index()
+    # plot line graph
+    median_price = alt.Chart(
+        median_resale_price, 
+        title = 'Median Resale Price by Month'
+    ).mark_line(
+        point = True
+    ).encode(
+        alt.X(
+            'month', 
+            axis = alt.Axis(
+                formatType = 'time', 
+                format = '%b-%y', 
+                title = 'Transaction Period',
+                grid = False,
+                tickCount= 'month' 
+                )),
+        alt.Y(
+            'resale_price', 
+            axis = alt.Axis(
+                title = "Resale Price (S$)",
+                formatType= 'number',
+                format= '~s'
+                ),
+            scale = alt.Scale(
+                domain = [
+                    round_up(median_resale_price['resale_price'].min(), 50_000, False),
+                    round_up(median_resale_price['resale_price'].max(), 50_000)
+                ]
+            )),
+    ).properties(
+        height = 300,
+    )
+    
+    # creates selection that chooses the nearest point
+    nearest = alt.selection_single(nearest = True, on = 'mouseover',
+                        fields = ['month'], empty = 'none')
+    
+    # selectors that tell us the x-value of the cursor
+    selectors = median_price.mark_point(color = 'red').encode(
+        x = 'month',
+        opacity = alt.condition(nearest, alt.value(1), alt.value(0)),
+        tooltip = [
+            alt.Tooltip('month', title = 'Transaction Period', format = '%b-%y'),
+            alt.Tooltip('resale_price', title = 'Median Resale Price', format = '$,'),
+            ],
+    ).add_selection(
+        nearest
+    )
 
-        # plot line graph
-        median_price = alt.Chart(
-            tab1_source, 
-            title = 'Median Resale Price by Month'
-        ).mark_line(
-            point = True
-        ).encode(
-            alt.X('month', axis = alt.Axis(formatType = 'time', format = '%b-%y', title = 'Transaction Period')),
-            alt.Y('resale_price', axis = alt.Axis(title = "Resale Price (S$)")),
-        )
-        
-        # creates selection that chooses the nearest point
-        nearest = alt.selection_single(nearest = True, on = 'mouseover',
-                            fields = ['month'], empty = 'none')
-        
-        # selectors that tell us the x-value of the cursor
-        selectors = median_price.mark_point(color = 'red').encode(
-            x = 'month',
-            opacity = alt.condition(nearest, alt.value(1), alt.value(0)),
-            tooltip = [
-                alt.Tooltip('month', title = 'Transaction Period', format = '%b-%y'),
-                alt.Tooltip('resale_price', title = 'Median Resale Price', format = '$,'),
-                ],
-        ).add_selection(
-            nearest
-        )
+    # draw a rule at location of selection
+    rule = median_price.mark_rule(color = 'gray').encode(
+        x = 'month',
+    ).transform_filter(
+        nearest
+    )
 
-        # draw a rule at location of selection
-        rule = median_price.mark_rule(color = 'gray').encode(
-            x = 'month',
-        ).transform_filter(
-            nearest
-        )
-        
-        st.altair_chart(median_price + selectors + rule, use_container_width = True)
+    # visualise number of transactions by month
+    transactions_by_month = alt.Chart(
+        resale_transactions,    
+        title = 'Monthly Transactions'
+    ).mark_line(
+        point = True
+    ).encode(
+        alt.X(
+            'month', 
+            axis = alt.Axis(
+                formatType = 'time', 
+                format = '%b-%y', 
+                title = 'Transaction Period',
+                grid = False,
+                tickCount= 'month' 
+                )),
+        alt.Y(
+            'town', 
+            axis = alt.Axis(
+                title = "Transactions",
+                formatType= 'number',
+                # format= '~s'
+                ),
+            scale = alt.Scale(
+                domain = [
+                    round_up(resale_transactions['town'].min(), 1_000, False),
+                    round_up(resale_transactions['town'].max(), 1_000)
+                ]
+            )),
+    ).properties(
+        height = 300,
+    )
+    
+    st.altair_chart(median_price + selectors + rule | transactions_by_month, use_container_width = True)
 
 
-    with tab2:
-        st.markdown("Click to filter by flat types, hold shift to select multiple options.")
-        selector = alt.selection_multi(empty='all', fields=['flat_type'])
+with st.container():
+    st.markdown("Click to filter by flat types, hold shift to select multiple options.")
+    selector = alt.selection_multi(empty='all', fields=['flat_type'])
 
-        base = alt.Chart(
-            df_filtered,
-        ).add_selection(selector)
+    base = alt.Chart(
+        df_filtered,
+    ).add_selection(selector)
 
-        flat_type = base.mark_bar().encode(
-            alt.X('count()', axis = alt.Axis(title = 'Transactions')),
-            alt.Y('flat_type:N', axis = alt.Axis(title = 'Flat Type')),
-            color = alt.condition(selector, 'flat_type:N', alt.value('lightgray'), legend = None),
-            tooltip = [
-                alt.Tooltip('flat_type', title = 'Flat Type'),
-                alt.Tooltip('count()', title = 'Transactions', format = ','),
-            ]
-        ).properties(
-            height = 300,
-        )
+    flat_type = base.mark_bar().encode(
+        alt.X('count()', axis = alt.Axis(title = 'Transactions')),
+        alt.Y('flat_type:N', axis = alt.Axis(title = 'Flat Type')),
+        color = alt.condition(selector, 'flat_type:N', alt.value('lightgray'), legend = None),
+        tooltip = [
+            alt.Tooltip('flat_type', title = 'Flat Type'),
+            alt.Tooltip('count()', title = 'Transactions', format = ','),
+        ]
+    ).properties(
+        height = 300,
+    )
 
-        floor_area = base.mark_bar(
-            opacity = 0.8,
-            binSpacing = 0
-        ).encode(
-            alt.X('floor_area_sqm:Q', bin = alt.Bin(step=5), axis = alt.Axis(title = 'Floor Area (sqm)')),
-            alt.Y('count()', stack = None, axis = alt.Axis(title = 'Count')),
-            alt.Color('flat_type:N', legend = None),
-        ).transform_filter(selector).properties(
-            height = 300,
-        )
+    floor_area = base.mark_bar(
+        opacity = 0.8,
+        binSpacing = 0
+    ).encode(
+        alt.X('floor_area_sqm:Q', bin = alt.Bin(step=5), axis = alt.Axis(title = 'Floor Area (sqm)')),
+        alt.Y('count()', stack = None, axis = alt.Axis(title = 'Count')),
+        alt.Color('flat_type:N', legend = None),
+    ).transform_filter(selector).properties(
+        height = 300,
+    )
 
-        st.altair_chart(flat_type | floor_area, use_container_width = True)
+    st.altair_chart(flat_type | floor_area, use_container_width = True)
 
 # chart_data = pd.DataFrame(
 #    np.random.randn(1000, 2) / [50, 50] + [37.76, -122.4],
