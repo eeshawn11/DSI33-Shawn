@@ -3,11 +3,19 @@ import streamlit as st
 import requests
 import numpy as np
 import altair as alt
+import pydeck as pdk
 from numerize.numerize import numerize
+import plotly.graph_objects as go
+import plotly.express as px
+import geopandas as gpd
+import json
 
 st.set_page_config(layout="wide")
 
-def retrieve(n):
+def retrieve(n: int):
+    '''
+    Retrieve data from Data.gov.sg API.
+    '''
     resource_id = "f1765b54-a209-4718-8d38-a39237f502b3"
     url_string = f"https://data.gov.sg/api/action/datastore_search?resource_id={resource_id}&limit={n}" 
     try:
@@ -17,6 +25,18 @@ def retrieve(n):
         print(f"Error occurred: {e}")
         print(e)
         print(url_string)
+
+def round_up(number, nearest: int, direction: bool = True):
+    '''
+    Round number up to the nearest value.
+        Set direction = False to round down instead.
+    '''
+    if direction == True:
+        return int(np.ceil(number / nearest)) * nearest
+    elif direction == False:
+        return int(np.floor(number / nearest)) * nearest
+    else:
+        return None
 
 @st.experimental_memo(ttl=2_630_000) # dataset is updated monthly
 def get_data():
@@ -35,10 +55,18 @@ def get_coords_df():
     # return pd.read_csv('C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/hdb_coords.csv')
 
 hdb_coordinates = get_coords_df()
-df_merged = df.merge(hdb_coordinates, how = 'inner', on = 'address')
+df_merged = df.merge(hdb_coordinates, how = 'left', on = 'address')
 df_merged.drop(columns = '_id', inplace = True)
 df_merged['month'] = pd.to_datetime(df_merged['month'], format = "%Y-%m", errors = "raise")
 df_merged['town'] = df_merged['town'].str.title()
+
+@st.experimental_singleton
+def get_chloropeth():
+    with open('./master-plan-2014-planning-area-boundary-no-sea.json') as f:
+        return json.load(f)
+#     return gpd.read_file("C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/master-plan-2014/master-plan-2014-planning-area-boundary-no-sea-shp/MP14_PLNG_AREA_NO_SEA_PL.shp")
+
+geo_df = get_chloropeth()
 
 towns = df_merged['town'].unique()
 towns = sorted(towns)
@@ -46,18 +74,6 @@ towns.insert(0, 'All')
 
 years = list(range(df_merged['month'].max().year, df_merged['month'].min().year - 1, -1))
 years.insert(0, 'All')
-
-def round_up(number, nearest: int, direction: bool = True):
-    '''
-    Round number up to the nearest value.
-        Set direction = False to round down instead.
-    '''
-    if direction == True:
-        return int(np.ceil(number / nearest)) * nearest
-    elif direction == False:
-        return int(np.floor(number / nearest)) * nearest
-    else:
-        return None
 
 # create sidebar for filtering dashboard
 with st.sidebar:
@@ -81,13 +97,14 @@ with st.sidebar:
         disabled=True,
     )
     
-min_date = pd.to_datetime(date_range[0])
-max_date = pd.to_datetime(date_range[1])
+# min_date = pd.to_datetime(date_range[0])
+# max_date = pd.to_datetime(date_range[1])
 
 with st.container():
     st.title("Singapore HDB Resale Price from 2017")
     st.markdown("This dashboard is inspired by [Inside Airbnb](http://insideairbnb.com/), and is an ongoing project to document my learning to use Streamlit and various plotting libraries to create an interactive dashboard. While this could perhaps be more easily resolved by using PowerBI or Tableau, I am taking the opportunity to explore various Python libraries and understand their documentation.")
-    st.markdown("Data from the dashboard is retrieved from Singapore's [Data.gov.sg](https://data.gov.sg/), a free portal with access to publicly-available datasets from over 70 public agencies. In particular, we dive into the HDB resale flat prices based on registration date from Jan 2017 onwards with this [dataset](https://data.gov.sg/dataset/resale-flat-prices).")
+    st.markdown("The project is rather close to heart since I've been looking out for a resale flat after getting married in mid-2022, so hopefully this dashboard can contribute to my purchase decision. :blush:")
+    st.markdown("Data from the dashboard is retrieved from Singapore's [Data.gov.sg](https://data.gov.sg/), a free portal with access to publicly-available datasets from over 70 public agencies made available under the terms of the [Singapore Open Data License](https://data.gov.sg/open-data-licence). In particular, we dive into the HDB resale flat prices [dataset](https://data.gov.sg/dataset/resale-flat-prices), while town boundaries in the chloropeth map are retrieved from [Master Plan 2014 Planning Area Boundary](https://data.gov.sg/dataset/master-plan-2014-planning-area-boundary-no-sea).")
 
 st.markdown("---")
 
@@ -115,6 +132,10 @@ else:
     # df_filtered = df_merged.query('month >= @min_date & month <= @max_date & town.str.contains(@town_option)')
         df_filtered = df_merged.query('month.dt.year == @year & town.str.contains(@town_option)')
 
+map_df = df_filtered.groupby('town').resale_price.median().reset_index()
+median_resale_price = df_filtered.groupby('month').resale_price.median().reset_index()
+resale_transactions = df_filtered.groupby('month').town.count().reset_index()
+
 with st.container():
     # st.subheader(f'{town_option} from {min_date:%b-%Y} to {max_date:%b-%Y}')
     st.markdown(f'## {town_option} transactions in {year}')
@@ -128,15 +149,15 @@ with st.container():
         help = 'Total resale transactions during this period'
     )
     met2.metric(
-        label = 'Percentage',
-        value = f"{(df_filtered['resale_price'].count() / len(df_merged.query('month >= @min_date & month <= @max_date')) * 100):.2f}%",
-        help = f'Proportion of total transactions for this period'
-    )
-    met3.metric(
         label = 'Total Transaction Value',
         value = f'S${numerize(df_filtered["resale_price"].astype(float).sum())}',
         help = 'Total value of all transactions during this period'
     )
+    # met3.metric(
+    #     label = 'Percentage',
+    #     value = f"{(df_filtered['resale_price'].count() / len(df_merged.query('month >= @min_date & month <= @max_date')) * 100):.2f}%",
+    #     help = f'Proportion of total transactions for this period'
+    # )
     # row 2
     met4, met5, met6 = st.columns(3)
     met4.metric(
@@ -158,10 +179,37 @@ with st.container():
 st.markdown("---")
 
 with st.container():
-    # create data source for Altair chart
-    median_resale_price = df_filtered.groupby('month').resale_price.median().reset_index()
-    resale_transactions = df_filtered.groupby('month').town.count().reset_index()
+    fig = px.choropleth_mapbox(
+        map_df,
+        geojson = geo_df,
+        locations = 'town',
+        color = 'resale_price',
+        featureidkey = 'properties.PLN_AREA_N',
+        color_continuous_scale = "Sunsetdark",
+        center = {'lat': 1.35, 'lon': 103.80},
+        mapbox_style = 'carto-positron',
+        opacity = 0.7,
+        labels = {
+            'town': 'Town',
+            'resale_price':'Median Resale Price'
+            },
+        zoom = 10,
+    )
 
+    fig.update_layout(
+        title = {
+            'text': f'Median Resale Price by Town in {year}'
+        },
+        height = 550,
+        width = 700,
+    )
+
+    if town_option != 'All':
+        fig.update_coloraxes(showscale=False)
+
+    st.plotly_chart(fig, use_container_width= True)
+
+with st.container():
     # plot line graph
     median_price = alt.Chart(
         median_resale_price, 
@@ -243,8 +291,8 @@ with st.container():
                 ),
             scale = alt.Scale(
                 domain = [
-                    round_up(resale_transactions['town'].min(), 1_000, False),
-                    round_up(resale_transactions['town'].max(), 1_000)
+                    round_up(resale_transactions['town'].min(), 250, False),
+                    round_up(resale_transactions['town'].max(), 250)
                 ]
             )),
     ).properties(
@@ -252,7 +300,6 @@ with st.container():
     )
     
     st.altair_chart(median_price + selectors + rule | transactions_by_month, use_container_width = True)
-
 
 with st.container():
     st.markdown("Click to filter by flat types, hold shift to select multiple options.")
@@ -286,43 +333,3 @@ with st.container():
     )
 
     st.altair_chart(flat_type | floor_area, use_container_width = True)
-
-# chart_data = pd.DataFrame(
-#    np.random.randn(1000, 2) / [50, 50] + [37.76, -122.4],
-#    columns=['lat', 'lon'])
-
-   
-# colours = [[240,249,232],[204,235,197],[168,221,181],[123,204,196],[67,162,202],[8,104,172]]
-
-# st.pydeck_chart(pdk.Deck(
-#     map_provider='mapbox',
-#     map_style='light',
-#     initial_view_state=pdk.ViewState(
-#         latitude=1.290270,
-#         longitude=103.851959,
-#         zoom=9,
-#         pitch=45,
-#     ),
-#     layers=[
-#         pdk.Layer(
-#            'HexagonLayer',
-#            data=df_merged[(df_merged['month'] > min_date) & (df_merged['month'] < max_date)],
-#            get_position='[longitude, latitude]',
-#            radius=50,
-#            elevation_scale=4,
-#            elevation_range=[0, 1000],
-#            pickable=True,
-#            extruded=True,
-#            colours=colours,
-#         ),
-#         pdk.Layer(
-#             'ScatterplotLayer',
-#             data=chart_data,
-#             get_position='[lon, lat]',
-#             get_color='[200, 30, 0, 160]',
-#             get_radius=200,
-#         ),
-#     ],
-# ))
-
-# pd.merge (inner join with long lat)
