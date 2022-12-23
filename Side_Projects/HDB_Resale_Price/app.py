@@ -3,11 +3,8 @@ import streamlit as st
 import requests
 import numpy as np
 import altair as alt
-import pydeck as pdk
 from numerize.numerize import numerize
-import plotly.graph_objects as go
 import plotly.express as px
-import geopandas as gpd
 import json
 
 st.set_page_config(layout="wide")
