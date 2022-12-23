@@ -48,8 +48,8 @@ df['address'] = df['block'] + ' ' + df['street_name']
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
-    return pd.read_csv('/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/hdb_coords.csv')
-    # return pd.read_csv('C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/hdb_coords.csv')
+    return pd.read_csv('/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv')
+    # return pd.read_csv('C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv')
 
 hdb_coordinates = get_coords_df()
 df_merged = df.merge(hdb_coordinates, how = 'left', on = 'address')
@@ -59,9 +59,8 @@ df_merged['town'] = df_merged['town'].str.title()
 
 @st.experimental_singleton
 def get_chloropeth():
-    with open('./master-plan-2014-planning-area-boundary-no-sea.json') as f:
+    with open('/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json') as f:
         return json.load(f)
-#     return gpd.read_file("C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/master-plan-2014/master-plan-2014-planning-area-boundary-no-sea-shp/MP14_PLNG_AREA_NO_SEA_PL.shp")
 
 geo_df = get_chloropeth()
 
