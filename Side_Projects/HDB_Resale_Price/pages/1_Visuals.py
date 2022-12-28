@@ -184,7 +184,7 @@ with st.container():
     )
     met5.metric(
         label="Highest Price",
-        value=f'S${numerize(df_filtered["resale_price"].max())}',
+        value=f'S${numerize(df_filtered["resale_price"].max().item())}',
         help="Highest resale transaction price during this period",
         delta=max_price_delta(),
         delta_color="inverse"
