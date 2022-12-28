@@ -1,11 +1,9 @@
 import pandas as pd
 import streamlit as st
-import requests
 import numpy as np
 import altair as alt
 from numerize.numerize import numerize
 import plotly.express as px
-import json
 
 st.set_page_config(layout="wide")
 alt.data_transformers.enable("json")
@@ -16,7 +14,11 @@ def magnitude(value: int) -> int:
 
 
 def get_buffer(value: int) -> int:
-    return 10 ** magnitude(value) / magnitude(value)
+    try:
+        buffer = 10 ** magnitude(value) / magnitude(value)
+        return buffer
+    except:
+        return 0
 
 
 def get_scale(series:pd.Series) -> list[int, int]:
@@ -152,7 +154,7 @@ resale_transactions = df_filtered.groupby("month").town.count().reset_index()
 
 
 with st.container():
-    st.markdown(f"## {town_option} transactions in {year}")
+    st.markdown(f"## {year} transactions in {town_option}")
     st.markdown("### Key Metrics")
     # row 1
     met1, met2, met3 = st.columns(3)
@@ -241,7 +243,7 @@ with st.container():
     )
 
     fig.update_layout(
-        title={"text": f"Median Resale Price by Town in {year}"},
+        title={"text": f"{year} Median Resale Price by Town"},
         height=550,
         width=700,
     )
