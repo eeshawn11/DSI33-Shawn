@@ -8,6 +8,15 @@ import plotly.express as px
 st.set_page_config(layout="wide")
 alt.data_transformers.enable("json")
 
+towns = st.session_state.df["town"].unique()
+towns = sorted(towns)
+towns.insert(0, "All")
+
+years = list(
+    range(st.session_state.df["month"].max().year, st.session_state.df["month"].min().year - 1, -1)
+)
+years.insert(0, "All")
+
 
 def magnitude(value: int) -> int:
     if value == 0:
@@ -32,7 +41,7 @@ def get_scale(series: pd.Series) -> list[int, int]:
 
 
 def resale_transaction_delta() -> str:
-    if year != "All" and year != st.session_state.years[-1]:
+    if year != "All" and year != years[-1]:
         delta = (
             df_filtered["resale_price"].count()
             - df_filtered_previous_year["resale_price"].count()
@@ -41,7 +50,7 @@ def resale_transaction_delta() -> str:
 
 
 def transaction_value_delta() -> str:
-    if year != "All" and year != st.session_state.years[-1]:
+    if year != "All" and year != years[-1]:
         delta = (
             df_filtered["resale_price"].sum()
             - df_filtered_previous_year["resale_price"].sum()
@@ -50,7 +59,7 @@ def transaction_value_delta() -> str:
 
 
 def min_price_delta() -> str:
-    if year != "All" and year != st.session_state.years[-1]:
+    if year != "All" and year != years[-1]:
         delta = (
             df_filtered["resale_price"].min()
             - df_filtered_previous_year["resale_price"].min()
@@ -59,7 +68,7 @@ def min_price_delta() -> str:
 
 
 def max_price_delta() -> str:
-    if year != "All" and year != st.session_state.years[-1]:
+    if year != "All" and year != years[-1]:
         delta = (
             df_filtered["resale_price"].max()
             - df_filtered_previous_year["resale_price"].max()
@@ -68,7 +77,7 @@ def max_price_delta() -> str:
 
 
 def median_price_delta() -> str:
-    if year != "All" and year != st.session_state.years[-1]:
+    if year != "All" and year != years[-1]:
         delta = (
             df_filtered["resale_price"].median()
             - df_filtered_previous_year["resale_price"].median()
@@ -79,9 +88,9 @@ def median_price_delta() -> str:
 # create sidebar for filtering dashboard
 with st.sidebar:
     st.header("Filter options")
-    town_option = st.selectbox(label="District", options=st.session_state.towns)
+    town_option = st.selectbox(label="District", options=towns)
 
-    year = st.selectbox(label="Year", options=st.session_state.years)
+    year = st.selectbox(label="Year", options=years)
 
 # filter df based on selected parameters
 if town_option == "All":
@@ -137,7 +146,7 @@ with st.container():
     )
     met5.metric(
         label="Highest Price",
-        value=f'S${numerize(df_filtered["resale_price"].max().item())}',
+        value=f'S${numerize(df_filtered["resale_price"].max())}',
         help="Highest resale transaction price during this period",
         delta=max_price_delta(),
         delta_color="inverse",
@@ -161,20 +170,47 @@ with st.container():
         featureidkey="properties.PLN_AREA_N",
         color_continuous_scale="Sunsetdark",
         center={"lat": 1.35, "lon": 103.80},
-        mapbox_style="carto-positron",
-        opacity=0.7,
+        # mapbox_style="carto-positron",
+        opacity=0.6,
         labels={"town": "Town", "resale_price": "Median Resale Price"},
-        zoom=10,
+        # zoom=10,
     )
 
     fig.update_layout(
         title={"text": f"{year} Median Resale Price by Town"},
         height=550,
         width=700,
+        mapbox = {
+            "accesstoken": st.secrets["mapbox_token"],
+            "style": "dark",
+            "zoom": 10,
+        }
     )
 
     if town_option != "All":
         fig.update_coloraxes(showscale=False)
+
+    million_dollar_flats = df_filtered[df_filtered["resale_price"] >= 1_000_000]
+
+    fig.add_scattermapbox(
+            below="",
+            lat=million_dollar_flats['latitude'],
+            lon=million_dollar_flats['longitude'],
+            text=million_dollar_flats['address'].str.title(),
+            mode="markers",
+            marker={
+                "symbol": "star",
+                "size": 5,
+                "opacity": 0.9
+                },
+            hovertemplate=
+                "<b>Million Dollar Flat</b><br><br>" +
+                "%{text}" +
+                "<extra></extra>",
+            hoverlabel={
+                'bgcolor': 'snow',
+            }
+        )
 
     st.plotly_chart(fig, use_container_width=True)
 
@@ -337,3 +373,37 @@ with st.container():
     )
 
     st.altair_chart(flat_type | floor_area, use_container_width=True)
+
+# with st.container():
+#     property_age = (
+#         alt.Chart(df_filtered)
+#         .mark_circle()
+#         .encode(
+#             x="age:Q",
+#             y="resale_price:Q",
+#             color="flat_type:N"
+#             # alt.X(
+#             #     "age:Q",
+#                 # axis=alt.Axis(
+#                 #     formatType="time",
+#                 #     format="%b-%y",
+#                 #     title="Transaction Period",
+#                 #     grid=False,
+#                 #     tickCount="month",
+#                 # ),
+#             # ),
+#             # alt.Y(
+#             #     "resale_price:Q",
+#                 # axis=alt.Axis(
+#                 #     title="Transactions",
+#                 #     formatType="number",
+#                 # ),
+#                 # scale=alt.Scale(domain=get_scale(df_filtered["town"])),
+#             # ),
+#         )
+#         # .properties(
+#         #     height=300,
+#         # )
+#     )
+
+#     st.altair_chart(property_age, use_container_width=True)
