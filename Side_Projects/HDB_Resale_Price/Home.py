@@ -177,17 +177,18 @@ st.markdown("---")
 # df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype(int)
 
 if "df" not in st.session_state:
-    df["address"] = df["block"] + " " + df["street_name"]
-    df_merged = df.merge(hdb_coordinates, how="left", on="address")
-    df_merged["month"] = pd.to_datetime(df_merged["month"], format="%Y-%m", errors="raise")
-    df_merged.rename(columns={'town': 'town_original'}, inplace=True)
-    df_merged["point"] = df_merged.apply(lambda x: Point(x.longitude, x.latitude), axis=1)
-    df_merged["town"] = df_merged["point"].apply(check_polygons)
-    df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town"]].astype("category")
-    df_merged["floor_area_sqm"] = df_merged["floor_area_sqm"].astype(float).astype("int16")
-    df_merged[["latitude", "longitude"]] = df_merged[["latitude", "longitude"]].astype("float32")
-    df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype(int)
-    st.session_state.df = df_merged
+    with st.spinner("Transforming data..."):
+        df["address"] = df["block"] + " " + df["street_name"]
+        df_merged = df.merge(hdb_coordinates, how="left", on="address")
+        df_merged["month"] = pd.to_datetime(df_merged["month"], format="%Y-%m", errors="raise")
+        df_merged.rename(columns={'town': 'town_original'}, inplace=True)
+        df_merged["point"] = df_merged.apply(lambda x: Point(x.longitude, x.latitude), axis=1)
+        df_merged["town"] = df_merged["point"].apply(check_polygons)
+        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town"]].astype("category")
+        df_merged["floor_area_sqm"] = df_merged["floor_area_sqm"].astype(float).astype("int16")
+        df_merged[["latitude", "longitude"]] = df_merged[["latitude", "longitude"]].astype("float32")
+        df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype(int)
+        st.session_state.df = df_merged
 
 
 with st.container():
