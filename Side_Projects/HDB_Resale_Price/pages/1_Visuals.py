@@ -220,7 +220,7 @@ with st.container():
         featureidkey="properties.PLN_AREA_N",
         color_continuous_scale="Sunsetdark",
         center={"lat": 1.35, "lon": 103.80},
-        opacity=0.6,
+        opacity=0.5,
         labels={"town": "Town", "resale_price": "Median Resale Price"},
     )
 
