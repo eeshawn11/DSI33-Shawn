@@ -8,8 +8,6 @@ from decimal import Decimal
 st.set_page_config(layout="wide")
 alt.data_transformers.enable("json")
 
-st.session_state.df.info()
-
 towns = st.session_state.df["town"].unique()
 towns = sorted(towns)
 towns.insert(0, "All")
@@ -102,7 +100,10 @@ def numerize(n, decimals=2):
     is_negative_string = ""
     if n < 0:
         is_negative_string = "-"
-    n = abs(Decimal(n))
+    try:
+        n = abs(Decimal(n))
+    except:
+        n = abs(Decimal(n.item()))
     if n >= 1000000 and n < 1000000000:
         if n % 1000000 == 0:
             return is_negative_string + str(int(n / 1000000)) + "M"
