@@ -38,12 +38,12 @@ df = get_data()
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
-    # return pd.read_csv(
-    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
-    # )
     return pd.read_csv(
-        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
+        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
     )
+    # return pd.read_csv(
+    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
+    # )
 
 
 hdb_coordinates = get_coords_df()
@@ -51,12 +51,12 @@ hdb_coordinates = get_coords_df()
 
 @st.experimental_singleton
 def get_chloropeth():
-    # with open(
-    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
-    # ) as f:
     with open(
-        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
     ) as f:
+    # with open(
+    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+    # ) as f:
         return json.load(f)
 
 
