@@ -2,7 +2,6 @@ import pandas as pd
 import streamlit as st
 import requests
 import json
-from datetime import date
 from shapely.geometry import Point, Polygon
 
 st.set_page_config(layout="wide")
@@ -33,22 +32,22 @@ def get_data():
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
-    # return pd.read_csv(
-    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
-    # )
     return pd.read_csv(
-        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
+        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
     )
+    # return pd.read_csv(
+    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
+    # )
 
 
 @st.experimental_singleton
 def get_chloropeth():
-    # with open(
-    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
-    # ) as f:
     with open(
-        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
     ) as f:
+    # with open(
+    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+    # ) as f:
         return json.load(f)
 
 # not used, need to figure out if there's a faster way to run the polygon check
