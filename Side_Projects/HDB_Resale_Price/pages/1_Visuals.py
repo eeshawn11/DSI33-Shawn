@@ -213,7 +213,6 @@ st.markdown("---")
 
 ###
 # WIP - create individual trace layers for $m flats by year
-# WIP - stars are not hidden after filtering by town
 ###
 with st.container():
     st.markdown(
