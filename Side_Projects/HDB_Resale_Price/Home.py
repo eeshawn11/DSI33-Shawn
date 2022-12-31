@@ -6,9 +6,14 @@ from shapely.geometry import Point, Polygon
 
 st.set_page_config(layout="wide")
 
+resource_ids = [
+    "f1765b54-a209-4718-8d38-a39237f502b3", # from Jan 2017 onwards
+    "1b702208-44bf-4829-b620-4615ee19b57c", # 2015 - 2016
+    "83b2fc37-ce8c-4df4-968b-370fd818138b", # Mar 2012 - 2014
+]
 
-def retrieve_data(n: int):
-    resource_id = "f1765b54-a209-4718-8d38-a39237f502b3"
+
+def retrieve_data(resource_id: str, n: int):
     url_string = f"https://data.gov.sg/api/action/datastore_search?resource_id={resource_id}&limit={n}"
     try:
         response = requests.get(
@@ -23,20 +28,25 @@ def retrieve_data(n: int):
 
 @st.experimental_memo(ttl=2_630_000)  # dataset is updated monthly
 def get_data():
-    body = retrieve_data(1)
-    limit = body["result"]["total"]
-    body = retrieve_data(limit)
-    content = pd.DataFrame(body["result"]["records"])
+    content = pd.DataFrame()
+    for resource_id in resource_ids:
+        body = retrieve_data(resource_id, 1)
+        limit = body["result"]["total"]
+        body = retrieve_data(resource_id, limit)
+        resource_df = pd.DataFrame(body["result"]["records"])
+        content = pd.concat([content, resource_df], ignore_index=True)
     return content
 
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
     return pd.read_csv(
-        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
+        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
+        index_col="address"
     )
     # return pd.read_csv(
-    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv"
+    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
+    #     index_col="address"
     # )
 
 
@@ -50,18 +60,6 @@ def get_chloropeth():
     # ) as f:
         return json.load(f)
 
-# not used, need to figure out if there's a faster way to run the polygon check
-def check_point(polygon, point):
-    if polygon.contains(point):
-        return True
-    return False
-
-
-def check_polygons(point):
-    for index, area in enumerate(polygons):
-        if area.contains(point):
-            return planning_areas[index]
-
 
 df = get_data()
 hdb_coordinates = get_coords_df()
@@ -70,7 +68,6 @@ if "geo_df" not in st.session_state:
     st.session_state.geo_df = get_chloropeth()
 
 
-@st.experimental_memo(max_entries=1)
 def get_planning_areas():
     planning_areas = []
     polygons = []
@@ -94,11 +91,24 @@ def get_planning_areas():
             )
     return planning_areas, polygons
 
+def generate_point(coordinates):
+    return Point(coordinates[1], coordinates[0])
 
-planning_areas, polygons = get_planning_areas()
+def check_polygons(point):
+    for index, area in enumerate(polygons):
+        if area.contains(point):
+            return planning_areas[index]
+
+def find_unique_locations(dataframe) -> dict:
+    town_map = {}
+    for address in dataframe["address"].unique():
+        point = generate_point(list(hdb_coordinates.loc[address]))
+        town_map[address] = check_polygons(point)
+    return town_map
+
 
 with st.container():
-    st.title("Singapore HDB Resale Price from 2017")
+    st.title("Singapore HDB Resale Price from 2012")
     st.markdown(
         """
         This dashboard is inspired by [Inside Airbnb](http://insideairbnb.com/) and various other dashboards I've come across on the web. 
@@ -144,21 +154,23 @@ with st.container():
 st.markdown("---")
 
 with st.container():
-    st.markdown("## Data Extraction & Transformation")
+    st.markdown("## Data Retrieval & Transformation")
     st.markdown(
         "We utilise the Data.gov.sg API to extract our required data. Let's check out the dataset to see what it includes."
     )
-    st.dataframe(df.head(), use_container_width=True)
+    st.dataframe(df.head(3), use_container_width=True)
     st.markdown(
         """
-        The dataset provides key information regarding the resale transactions since 2017, including location, flat type and lease information. The information 
-        is clean and free of missing values, although we will still need to perform some transformations for use in our visualisations.
+        The dataset provides key information regarding the resale transactions since 2012, including location, flat type and lease information. The information 
+        is generally clean, although we will still need to perform some transformations for use in our visualisations.
+
+        > Notes from the dataset:
+        > The data is based on the date of registration for the resale transactions, and exclude any transactions that may not reflect the full market price such
+        > as resale between relatives or resale of part shares.
         """
     )
-    with st.echo():
-        df.shape[0]
     st.markdown(
-        "Checking the shape of the dataframe shows us the total number of rows, each of which represents a unique resale transaction based on the date of registration."
+        f"Checking the shape of the dataframe, we currently have `{df.shape[0]}` rows, each of which represents a unique resale transaction based on the date of registration. "
     )
 
 st.markdown("---")
@@ -168,31 +180,41 @@ if "df" not in st.session_state:
         df["address"] = df["block"] + " " + df["street_name"]
         df_merged = df.merge(hdb_coordinates, how="left", on="address")
         df_merged["month"] = pd.to_datetime(df_merged["month"], format="%Y-%m", errors="raise")
+        df_merged["remaining_lease"] = df_merged["lease_commence_date"].astype(int) + 99 - df_merged["month"].dt.year
         df_merged.rename(columns={'town': 'town_original'}, inplace=True)
-        df_merged["point"] = df_merged.apply(lambda x: Point(x.longitude, x.latitude), axis=1)
-        df_merged["town"] = df_merged["point"].apply(check_polygons)
-        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town"]].astype("category")
-        df_merged["floor_area_sqm"] = df_merged["floor_area_sqm"].astype(float).astype("int16")
+        planning_areas, polygons = get_planning_areas()
+        town_map = find_unique_locations(df_merged)
+        df_merged["town"] = df_merged["address"].map(town_map)
+        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address"]].astype("category")
+        df_merged[["floor_area_sqm", "remaining_lease"]] = df_merged[["floor_area_sqm", "remaining_lease"]].astype(float).astype("int16")
         df_merged[["latitude", "longitude"]] = df_merged[["latitude", "longitude"]].astype("float32")
-        df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype(int)
+        df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype("int32")
         st.session_state.df = df_merged
-
 
 with st.container():
     st.markdown(
         """
-        - Combining `block` and `street_name` into a new `address` column, I then utilised a free [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority to retrieve the coordinates of these addresses for plotting onto a map.
-        - The `town` column does not correspond fully to the planning areas within the choropeth, so we'll check and rename towns within the dataset based the choropeth.
+        - Combining `block` and `street_name` into a new `address` column, I then utilised a free [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority to retrieve the `latitude` and `longitude` coordinates of these addresses for plotting onto a map.
+        - The older datasets did not include a `remaining_lease` column, but it's easy to calculate based on the standard 99-year HDB leases.
+        - The `town` column does not correspond fully to the planning areas within the choropeth, so we'll check and rename towns within the dataset based the choropeth.        
+        - There are some transactions in HDB blocks that have since been [reacquired]((https://www.hdb.gov.sg/residential/living-in-an-hdb-flat/sers-and-upgrading-programmes/sers/sers-projects/completed-sers-projects)) by the state, such as 1A & 2A Woodlands Centre Road, which did not show up in the OneMap API, but interestingly are still appearing in Google Maps.
         """
     )
+
+
+st.markdown("---")
+
+with st.container():
     st.markdown(
         """
-        After performing some transformations on the data, notice the new columns that have been added.
+        After performing the transformations on the data, notice the new columns that have been added and we are ready to move on with visualisations!
         """
     )
-    st.dataframe(st.session_state.df.head(3))
+    st.dataframe(st.session_state.df.head(3), use_container_width=True)
 
 try:
-    st.session_state.df.drop(columns=["point", "town_original", "_id", "block", "street_name"], inplace=True)
+    st.session_state.df.drop(columns=["town_original", "_id", "block", "street_name"], inplace=True)
 except:
     pass
+
+print(st.session_state.df.info())

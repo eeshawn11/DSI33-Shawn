@@ -12,10 +12,8 @@ towns = st.session_state.df["town"].unique()
 towns = sorted(towns)
 towns.insert(0, "All")
 
-years = list(
-    st.session_state.df["month"].dt.year.unique()
-)
-years.reverse()
+years = list(st.session_state.df["month"].dt.year.unique())
+years = sorted(years, reverse=True)
 years.insert(0, "All")
 
 
@@ -89,14 +87,16 @@ def median_price_delta() -> str:
 def round_num(n, decimals):
     return n.to_integral() if n == n.to_integral() else round(n.normalize(), decimals)
 
+
 def drop_zero(n):
     n = str(n)
-    return n.rstrip('0').rstrip('.') if '.' in n else n
+    return n.rstrip("0").rstrip(".") if "." in n else n
+
 
 def numerize(n, decimals=2):
-    '''
-    Script adapted from numerize (https://github.com/davidsa03/numerize) to handle numbers over 1 million only
-    '''
+    """
+    Adapted from numerize (https://github.com/davidsa03/numerize) to handle numbers over 1 million only
+    """
     is_negative_string = ""
     if n < 0:
         is_negative_string = "-"
@@ -155,9 +155,15 @@ else:
 
 # create dataframes for individual plot displays
 map_df = df_filtered.groupby("town").resale_price.median().reset_index()
+map_df["resale_price"] = map_df["resale_price"].astype("int32")
 resale_price = df_filtered.groupby("month").resale_price.median().reset_index()
+resale_price["resale_price"] = resale_price["resale_price"].astype("int32")
 resale_transactions = df_filtered.groupby("month").town.count().reset_index()
+resale_transactions["town"] = resale_transactions["town"].astype("int16")
 million_dollar_flats = df_filtered[df_filtered["resale_price"] >= 1_000_000]
+
+with st.container():
+    st.title("Singapore HDB Resale Price from 2012")
 
 with st.container():
     st.markdown(f"## {year_option} transactions in {town_option}")
@@ -228,38 +234,33 @@ with st.container():
         title={
             "text": f"{year_option} Median Resale Price by Town",
             "x": 0.5,
-            "xanchor": "center"
-            },
+            "xanchor": "center",
+        },
         height=700,
-        mapbox = {
+        mapbox={
             "accesstoken": st.secrets["mapbox_token"],
             "style": "dark",
             "zoom": 10,
-        }
+        },
     )
 
     if town_option != "All":
         map_plot.update_coloraxes(showscale=False)
 
     map_plot.add_scattermapbox(
-            below="",
-            lat=million_dollar_flats['latitude'],
-            lon=million_dollar_flats['longitude'],
-            text=million_dollar_flats['address'].str.title(),
-            mode="markers",
-            marker={
-                "symbol": "star",
-                "size": 5,
-                "opacity": 0.9
-                },
-            hovertemplate=
-                "<b>Million Dollar Flat</b><br><br>" +
-                "%{text}" +
-                "<extra></extra>",
-            hoverlabel={
-                'bgcolor': 'snow',
-            }
-        )
+        below="",
+        lat=million_dollar_flats["latitude"],
+        lon=million_dollar_flats["longitude"],
+        text=million_dollar_flats["address"].str.title(),
+        mode="markers",
+        marker={"symbol": "star", "size": 5, "opacity": 0.9},
+        hovertemplate="<b>Million Dollar Flat</b><br><br>"
+        + "%{text}"
+        + "<extra></extra>",
+        hoverlabel={
+            "bgcolor": "snow",
+        },
+    )
 
     st.plotly_chart(map_plot, use_container_width=True)
 
@@ -291,7 +292,7 @@ with st.container():
                 ),
             )
             .properties(
-                height=300,
+                height=350,
             )
         )
 
@@ -308,7 +309,9 @@ with st.container():
                 opacity=alt.condition(median_price_nearest, alt.value(1), alt.value(0)),
                 tooltip=[
                     alt.Tooltip("month", title="Transaction Period", format="%b-%y"),
-                    alt.Tooltip("resale_price", title="Median Resale Price", format="$,"),
+                    alt.Tooltip(
+                        "resale_price", title="Median Resale Price", format="$,"
+                    ),
                 ],
             )
             .add_selection(median_price_nearest)
@@ -332,7 +335,9 @@ with st.container():
         # visualise number of transactions by month
         transactions_by_month_plot = (
             alt.Chart(resale_transactions, title="Monthly Transactions by Month")
-            .mark_line(point=alt.OverlayMarkDef(filled=True, fill="green"), color="green")
+            .mark_line(
+                point=alt.OverlayMarkDef(filled=True, fill="green"), color="green"
+            )
             .encode(
                 alt.X(
                     "month:T",
@@ -354,7 +359,7 @@ with st.container():
                 ),
             )
             .properties(
-                height=300,
+                height=350,
             )
         )
 
@@ -412,7 +417,7 @@ with st.container():
                 alt.Tooltip("count()", title="Transactions", format=","),
             ],
         )
-        .properties(height=300, title="Transactions by Flat Type")
+        .properties(height=350, title="Transactions by Flat Type")
     )
 
     floor_area_plot = (
@@ -427,7 +432,7 @@ with st.container():
             alt.Color("flat_type:N", legend=None),
         )
         .transform_filter(selector)
-        .properties(height=300, title="Distribution of Floor Area by Flat Type")
+        .properties(height=350, title="Distribution of Floor Area by Flat Type")
     )
 
     st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
