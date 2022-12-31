@@ -6,3 +6,4 @@ numerize>=0.12
 altair==4.2.0
 plotly==5.11.0
 shapely>=2.0.0
+streamlit_extras>=0.2.4
