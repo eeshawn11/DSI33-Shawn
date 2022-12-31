@@ -35,9 +35,12 @@ An exploratory analysis into SAT 2019 performance in the state of California, Un
 ---
 
 ### [HDB Resale Price Dashboard](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/HDB_Resale_Price) [Ongoing]
-Exploration of a data set from [Data.gov.sg](https://data.gov.sg/), in particular HDB resale prices from 2017. The main aim is to practise using Python to generate a dashboard with various data visualisations.
+Exploration of a data set from [Data.gov.sg](https://data.gov.sg/), in particular HDB resale prices from 2012, to create an interactive dashboard. I am also hopeful that any insights gleaned could be helpful to my own HDB purchase journey.
+
+This is an ongoing project to document my learning with using Streamlit and various Python libraries. While such a dashboard could perhaps be more easily created using PowerBI or Tableau, I am also taking the opportunity to explore the various Python plotting libraries and understand their documentation.
 
 #### Skills demonstrated:
 
-- Data visualisation with `Vega-Altair`
+- Data extraction from live Data.gov.sg API
+- Data visualisation with `Vega-Altair` and `Plotly`
 - Python web app deployment with [`streamlit`](https://shawn-hdb-resale-viz.streamlit.app/)
