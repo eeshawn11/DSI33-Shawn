@@ -3,6 +3,7 @@ import streamlit as st
 import requests
 import json
 from shapely.geometry import Point, Polygon
+import time
 
 st.set_page_config(layout="wide")
 
@@ -17,9 +18,13 @@ def retrieve_data(resource_id: str, n: int):
     url_string = f"https://data.gov.sg/api/action/datastore_search?resource_id={resource_id}&limit={n}"
     try:
         response = requests.get(
-            url_string, headers={"User-Agent": "Mozilla/5.0"}
+            url_string, headers={"User-Agent": "Mozilla/5.0"}, timeout=10
         ).json()
-        return response
+        if response["success"] == True:
+            print("Call success")
+            return response
+        elif response["success"] == False:
+            print("Call failed")
     except Exception as e:
         print(f"Error occurred: {e}")
         print(e)
@@ -30,34 +35,40 @@ def retrieve_data(resource_id: str, n: int):
 def get_data():
     content = pd.DataFrame()
     for resource_id in resource_ids:
-        body = retrieve_data(resource_id, 1)
-        limit = body["result"]["total"]
-        body = retrieve_data(resource_id, limit)
-        resource_df = pd.DataFrame(body["result"]["records"])
-        content = pd.concat([content, resource_df], ignore_index=True)
+        time.sleep(1)
+        try:
+            print(f"First call to {resource_id}")
+            body = retrieve_data(resource_id, 1)
+            limit = body["result"]["total"]
+            print(f"Second call, retrieving {limit} records")
+            body = retrieve_data(resource_id, limit)
+            resource_df = pd.DataFrame(body["result"]["records"])
+            content = pd.concat([content, resource_df], ignore_index=True)
+        except:
+            print(f"Error: {resource_id} unsuccessful")
     return content
 
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
-    return pd.read_csv(
-        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
-        index_col="address"
-    )
     # return pd.read_csv(
-    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
+    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
     #     index_col="address"
     # )
+    return pd.read_csv(
+        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
+        index_col="address"
+    )
 
 
 @st.experimental_singleton
 def get_chloropeth():
-    with open(
-        "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
-    ) as f:
     # with open(
-    #     "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
     # ) as f:
+    with open(
+        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+    ) as f:
         return json.load(f)
 
 
@@ -216,5 +227,3 @@ try:
     st.session_state.df.drop(columns=["town_original", "_id", "block", "street_name"], inplace=True)
 except:
     pass
-
-print(st.session_state.df.info())
