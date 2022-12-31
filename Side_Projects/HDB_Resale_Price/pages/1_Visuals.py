@@ -160,11 +160,8 @@ else:
 
 # create dataframes for individual plot displays
 map_df = df_filtered.groupby("town").resale_price.median().reset_index()
-map_df["resale_price"] = map_df["resale_price"].astype("int32")
 resale_price = df_filtered.groupby("month").resale_price.median().reset_index()
-resale_price["resale_price"] = resale_price["resale_price"].astype("int32")
 resale_transactions = df_filtered.groupby("month").town.count().reset_index()
-resale_transactions["town"] = resale_transactions["town"].astype("int16")
 million_dollar_flats = df_filtered[df_filtered["resale_price"] >= 1_000_000]
 
 with st.container():
@@ -216,6 +213,7 @@ st.markdown("---")
 
 ###
 # WIP - create individual trace layers for $m flats by year
+# WIP - stars are not hidden after filtering by town
 ###
 with st.container():
     st.markdown(
@@ -250,6 +248,7 @@ with st.container():
             "accesstoken": st.secrets["mapbox_token"],
             "style": "dark",
             "zoom": 10,
+            "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15}
         },
     )
 
@@ -263,11 +262,12 @@ with st.container():
         text=million_dollar_flats["address"].str.title(),
         mode="markers",
         marker={"symbol": "star", "size": 5, "opacity": 0.9},
-        hovertemplate="<b>Million Dollar Flat</b><br><br>"
+        hovertemplate="<b>Million-Dollar Flat</b><br><br>"
         + "%{text}"
         + "<extra></extra>",
         hoverlabel={
             "bgcolor": "snow",
+            "font_color" : "black"
         },
     )
 

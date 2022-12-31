@@ -42,12 +42,13 @@ def get_data():
             print(f"First call to {resource_id}")
             body = retrieve_data(resource_id, 1)
             limit = body["result"]["total"]
-            print(f"Second call, retrieving {limit} records")
+            print(f"Second call, retrieving {limit:,} records")
             body = retrieve_data(resource_id, limit)
             resource_df = pd.DataFrame(body["result"]["records"])
             content = pd.concat([content, resource_df], ignore_index=True)
         except:
             print(f"Error: {resource_id} unsuccessful")
+    print(f"Retrieval complete! {content.shape[0]:,} records retrieved.")
     return content
 
 
