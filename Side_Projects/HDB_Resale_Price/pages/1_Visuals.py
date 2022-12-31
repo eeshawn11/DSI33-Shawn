@@ -4,9 +4,14 @@ import numpy as np
 import altair as alt
 import plotly.express as px
 from decimal import Decimal
+from streamlit_extras.switch_page_button import switch_page
 
 st.set_page_config(layout="wide")
 alt.data_transformers.enable("json")
+
+if "df" not in st.session_state:
+    st.error("Error: DataFrame not found, redirecting to Home")
+    switch_page("Home")
 
 towns = st.session_state.df["town"].unique()
 towns = sorted(towns)
@@ -208,6 +213,10 @@ with st.container():
 
 st.markdown("---")
 
+
+###
+# WIP - create individual trace layers for $m flats by year
+###
 with st.container():
     st.markdown(
         """
@@ -437,6 +446,9 @@ with st.container():
 
     st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
 
+###
+# WIP - create chart showing relationship between property age, size and price?
+###
 # with st.container():
 #     property_age = (
 #         alt.Chart(df_filtered)
