@@ -4,6 +4,7 @@ import requests
 import json
 from shapely.geometry import Point, Polygon
 import time
+import os
 
 st.set_page_config(layout="wide")
 
@@ -13,6 +14,7 @@ resource_ids = [
     "83b2fc37-ce8c-4df4-968b-370fd818138b", # Mar 2012 - 2014
 ]
 
+path = os.path.dirname(__file__)
 
 def retrieve_data(resource_id: str, n: int):
     url_string = f"https://data.gov.sg/api/action/datastore_search?resource_id={resource_id}&limit={n}"
@@ -51,23 +53,16 @@ def get_data():
 
 @st.experimental_memo(max_entries=1)
 def get_coords_df():
-    # return pd.read_csv(
-    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
-    #     index_col="address"
-    # )
     return pd.read_csv(
-        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/hdb_coords.csv",
+        path+"/assets/hdb_coords.csv",
         index_col="address"
     )
 
 
 @st.experimental_singleton
 def get_chloropeth():
-    # with open(
-    #     "/app/dsi33-shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
-    # ) as f:
     with open(
-        "C:/Users/brkit/Documents/DSI33-Shawn/Side_Projects/HDB_Resale_Price/assets/master-plan-2014-planning-area-boundary-no-sea.json"
+        path+"/assets/master-plan-2014-planning-area-boundary-no-sea.json"
     ) as f:
         return json.load(f)
 
