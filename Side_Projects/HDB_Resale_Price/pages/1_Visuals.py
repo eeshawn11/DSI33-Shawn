@@ -213,6 +213,7 @@ st.markdown("---")
 
 ###
 # WIP - create individual trace layers for $m flats by year
+# WIP - include average PSF comparisons
 ###
 with st.container():
     st.markdown(
