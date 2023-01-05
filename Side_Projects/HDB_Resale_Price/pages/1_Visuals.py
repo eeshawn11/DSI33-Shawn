@@ -159,10 +159,11 @@ else:
         )
 
 # create dataframes for individual plot displays
-map_df = df_filtered.groupby("town").resale_price.median().reset_index()
+map_df = df_filtered.groupby("town").resale_price.agg(["count", "median"]).reset_index()
 resale_price = df_filtered.groupby("month").resale_price.median().reset_index()
 resale_transactions = df_filtered.groupby("month").town.count().reset_index()
-million_dollar_flats = df_filtered[df_filtered["resale_price"] >= 1_000_000]
+million_dollar_flats = df_filtered[df_filtered["resale_price"] >= 1_000_000][["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
+million_dollar_flats["text"] = million_dollar_flats["flat_type"].str.title() +  " flat at " +  million_dollar_flats["address"].astype(str).str.title() + ", sold for $" + million_dollar_flats["resale_price"].apply(lambda x: f"{x:,}")
 
 with st.container():
     st.title("Singapore HDB Resale Price from 2012")
@@ -218,7 +219,7 @@ st.markdown("---")
 with st.container():
     st.markdown(
         """
-        A choropeth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
+        A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
         
         - The planning areas are coloured based on the median resale price in each area during the selected time period.
         - Stars on the map represent transactions that have crossed the coveted S$1 million threshold.
@@ -229,12 +230,18 @@ with st.container():
         map_df,
         geojson=st.session_state.geo_df,
         locations="town",
-        color="resale_price",
+        color="median",
         featureidkey="properties.PLN_AREA_N",
         color_continuous_scale="Sunsetdark",
         center={"lat": 1.35, "lon": 103.80},
         opacity=0.5,
-        labels={"town": "Town", "resale_price": "Median Resale Price"},
+        hover_name="town",
+        hover_data={
+            "town": False,
+            "count": ":,",
+            "median": ":,"
+        },
+        labels={"town": "Town", "count": "Transactions", "median": "Median Resale Price"},
     )
 
     map_plot.update_layout(
@@ -252,16 +259,13 @@ with st.container():
         },
     )
 
-    if town_option != "All":
-        map_plot.update_coloraxes(showscale=False)
-
     map_plot.add_scattermapbox(
         below="",
         lat=million_dollar_flats["latitude"],
         lon=million_dollar_flats["longitude"],
-        text=million_dollar_flats["address"].str.title(),
+        text=million_dollar_flats["text"],
         mode="markers",
-        marker={"symbol": "star", "size": 5, "opacity": 0.9},
+        marker={"symbol": "star", "size": 5, "opacity": 0.9, "allowoverlap": True},
         hovertemplate="<b>Million-Dollar Flat</b><br><br>"
         + "%{text}"
         + "<extra></extra>",
