@@ -113,6 +113,15 @@ def find_unique_locations(dataframe) -> dict:
         town_map[address] = check_polygons(point)
     return town_map
 
+with st.sidebar:
+    st.markdown(
+        """
+        Created by Shawn
+
+        - Happy to connect on [LinkedIn](https://www.linkedin.com/in/shawn-sing/)
+        - Check out my [GitHub](https://github.com/eeshawn11/) for other projects
+        """
+    )
 
 with st.container():
     st.title("Singapore HDB Resale Price from 2012")

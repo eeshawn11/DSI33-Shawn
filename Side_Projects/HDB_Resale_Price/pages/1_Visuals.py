@@ -138,6 +138,17 @@ with st.sidebar:
 
     year_option = st.selectbox(label="Year", options=years)
 
+    st.markdown(
+        """
+        ---
+        
+        Created by Shawn
+
+        - Happy to connect on [LinkedIn](https://www.linkedin.com/in/shawn-sing/)
+        - Check out my [GitHub](https://github.com/eeshawn11/) for other projects
+        """
+    )
+
 # filter df based on selected parameters
 if town_option == "All":
     if year_option == "All":
