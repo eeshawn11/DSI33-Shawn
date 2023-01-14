@@ -7,3 +7,4 @@ Tensorflow/models/*
 Tensorflow/workspace/training_naruto/images
 Capstone/assets/images
 Capstone/flickr30k
+Capstone/__pycache__
