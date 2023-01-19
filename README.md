@@ -47,7 +47,7 @@ An exploratory analysis into SAT 2019 performance in the state of California, Un
 
 ---
 
-### [HDB Resale Price Dashboard](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/HDB_Resale_Price) [Ongoing]
+### [HDB Resale Price Dashboard](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/HDB_Resale_Price) [WIP]
 
 Exploration of a data set from [Data.gov.sg](https://data.gov.sg/), in particular HDB resale prices from 2012, to create an interactive dashboard. I am also hopeful that any insights gleaned could be helpful to my own HDB purchase journey.
 
