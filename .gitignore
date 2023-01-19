@@ -7,4 +7,6 @@ Tensorflow/models/*
 Tensorflow/workspace/training_naruto/images
 Capstone/assets/images
 Capstone/flickr30k
+Capstone/flickr8k
 Capstone/__pycache__
+Capstone/kaggle.json
