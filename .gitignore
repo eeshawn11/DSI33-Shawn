@@ -5,11 +5,5 @@ Side_Projects/HDB_Resale_Price/test.ipynb
 Side_Projects/Review_Generator/corpus
 Tensorflow/models/*
 Tensorflow/workspace/training_naruto/images
-Capstone/assets/images
-Capstone/flickr30k
-Capstone/flickr8k
-Capstone/__pycache__
-Capstone/kaggle.json
-Capstone/unused
 *.json
-Capstone/Backup_Capstone_Attention_Mechanism.ipynb
+Capstone
