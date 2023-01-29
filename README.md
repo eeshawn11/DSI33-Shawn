@@ -16,7 +16,7 @@ Creating a classification model that predicts the presence of West Nile virus to
 
 ### [Project 3 - Subreddit Classifier](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Project3)
 
-Using NLP to create a classification model that is able to accurately classify a Reddit.com post between two subreddits: r/codingbootcamp and r/csMajors. Achieved an F1-score of 93% and deployed a demonstration web app via [streamlit](https://shawn-nlp-classifier.streamlit.app).
+Using NLP to create a classification model that is able to accurately classify a Reddit.com post between two subreddits: r/codingbootcamp and r/csMajors. Achieved an F1-score of 93% and deployed a demonstration web app via [streamlit](https://eeshawn-nlp-classifier.streamlit.app).
 
 #### Skills demonstrated:
 
@@ -24,7 +24,7 @@ Using NLP to create a classification model that is able to accurately classify a
 - Natural Language Processing using `NLTK` and `RegEx`
 - Vectorisation with `scikit-learn` Count Vectorizer and TF-IDF Vectorizer
 - Classification models with `scikit-learn`, e.g. Logistic Regression, Naive Bayes, Random Forest and Support Vector Machine
-- Python web app deployment with [`Flask`](https://github.com/eeshawn11/DSI33-Shawn/blob/main/Project3/app/app.py) and [`streamlit`](https://shawn-nlp-classifier.streamlit.app)
+- Python web app deployment with [`Flask`](https://github.com/eeshawn11/DSI33-Shawn/blob/main/Project3/app/app.py) and [`streamlit`](https://eeshawn-nlp-classifier.streamlit.app)
 
 ### [Project 2 - Ames Housing Data and Kaggle Challenge](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Project2)
 
