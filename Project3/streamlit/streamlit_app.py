@@ -56,7 +56,7 @@ def feature_importances_NB(clf, data):
     return np.multiply(data, delta_log_prob)
 
 @st.experimental_memo(ttl=24*3600)
-def get_top_N_features(pipe, text):
+def get_top_N_features(_pipe, text):
     """
     Returns a dataframe, with the token name and its feature importance to class 1
     relative to class 0 in terms of log-probabilities 
@@ -66,10 +66,10 @@ def get_top_N_features(pipe, text):
         N = len(text.split(" "))
     else:
         N = 10
-    data = np.asarray(pipe[0].transform([text]).todense()).reshape(-1) # Generate a non-sparse count vector
-    feature_importances = feature_importances_NB(pipe[1], data)
+    data = np.asarray(_pipe[0].transform([text]).todense()).reshape(-1) # Generate a non-sparse count vector
+    feature_importances = feature_importances_NB(_pipe[1], data)
     topN_features_idx = np.argsort(np.abs(feature_importances))[-N:]
-    return pd.DataFrame([(pipe[0].get_feature_names_out()[i], 
+    return pd.DataFrame([(_pipe[0].get_feature_names_out()[i], 
                        '{:.3f}'.format(feature_importances[i]) 
                   ) for i in topN_features_idx[::-1]], columns=['Top Features', 'Feature Importance'])
 
