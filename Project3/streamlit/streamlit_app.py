@@ -6,11 +6,11 @@ import re
 from string import punctuation
 from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 import nltk
-# nltk.download('wordnet')
-# nltk.download('omw-1.4')
 
 @st.experimental_singleton
 def load_model():
+    nltk.download('wordnet')
+    nltk.download('omw-1.4')
     return joblib.load('/app/dsi33-shawn/Project3/streamlit/subreddit_model.pkl')
 
 pipe = load_model()
