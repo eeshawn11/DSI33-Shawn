@@ -73,6 +73,15 @@ def get_top_N_features(_pipe, text):
                        '{:.3f}'.format(feature_importances[i]) 
                   ) for i in topN_features_idx[::-1]], columns=['Top Features', 'Feature Importance'])
 
+with st.sidebar:
+    st.markdown(
+        """
+        Created by Shawn
+
+        - Happy to connect on [LinkedIn](https://www.linkedin.com/in/shawn-sing/)
+        - Check out my other projects on [GitHub](https://github.com/eeshawn11/)
+        """
+        )
 
 st.title("Subreddit Classification Model")
 st.markdown("""
