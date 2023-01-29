@@ -358,7 +358,7 @@ with st.container():
     with chart2:
         # visualise number of transactions by month
         transactions_by_month_plot = (
-            alt.Chart(resale_transactions, title="Monthly Transactions by Month")
+            alt.Chart(resale_transactions, title="Total Transactions per Month")
             .mark_line(
                 point=alt.OverlayMarkDef(filled=True, fill="green"), color="green"
             )
