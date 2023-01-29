@@ -145,7 +145,7 @@ with st.sidebar:
         Created by Shawn
 
         - Happy to connect on [LinkedIn](https://www.linkedin.com/in/shawn-sing/)
-        - Check out my [GitHub](https://github.com/eeshawn11/) for other projects
+        - Check out my other projects on [GitHub](https://github.com/eeshawn11/)
         """
     )
 

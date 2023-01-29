@@ -33,7 +33,7 @@ def retrieve_data(resource_id: str, n: int):
         print(url_string)
 
 
-@st.experimental_memo(ttl=2_630_000)  # dataset is updated monthly
+@st.experimental_memo(show_spinner=False, ttl=2_630_000)  # dataset is updated monthly
 def get_data():
     content = pd.DataFrame()
     for resource_id in resource_ids:
@@ -67,9 +67,9 @@ def get_chloropeth():
     ) as f:
         return json.load(f)
 
-
-df = get_data()
-hdb_coordinates = get_coords_df()
+with st.spinner("Fetching data..."):
+    df = get_data()
+    hdb_coordinates = get_coords_df()
 
 if "geo_df" not in st.session_state:
     st.session_state.geo_df = get_chloropeth()
@@ -119,7 +119,7 @@ with st.sidebar:
         Created by Shawn
 
         - Happy to connect on [LinkedIn](https://www.linkedin.com/in/shawn-sing/)
-        - Check out my [GitHub](https://github.com/eeshawn11/) for other projects
+        - Check out my other projects on [GitHub](https://github.com/eeshawn11/)
         """
     )
 
