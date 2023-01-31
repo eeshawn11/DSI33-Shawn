@@ -5,3 +5,4 @@ Side_Projects/Review_Generator/corpus
 Tensorflow
 *.json
 Capstone
+*.toml
