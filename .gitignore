@@ -1,9 +1,7 @@
-.vscode/settings.json
-mouse.py
+.vscode
 Kaggle
 Side_Projects/HDB_Resale_Price/test.ipynb
 Side_Projects/Review_Generator/corpus
-Tensorflow/models/*
-Tensorflow/workspace/training_naruto/images
+Tensorflow
 *.json
 Capstone
