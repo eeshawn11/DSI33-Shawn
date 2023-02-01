@@ -9,6 +9,7 @@ from streamlit_extras.switch_page_button import switch_page
 st.set_page_config(layout="wide")
 alt.data_transformers.enable("json")
 
+# return to home to fetch data 
 if "df" not in st.session_state:
     switch_page("Home")
 
@@ -85,7 +86,7 @@ def numerize(n, decimals=2):
 
 def add_marker(base_chart, nearest, tooltip_y_val:str, tooltip_y_title:str, tooltip_y_format:str):
     '''
-    Adds a selector indiator and rule to altair chart
+    Adds a selector indicator and rule to altair chart
     '''
     # selectors that tell us the x-value of the cursor
     selector = (
@@ -154,11 +155,11 @@ else:
 # median price choropleth
 median_map_df = df_filtered.groupby("town").resale_price.agg(["count", "median"]).reset_index()
 # choropleth scatter overlay
-million_dollar_flats_df = df_filtered[df_filtered["resale_price"] >= 1_000_000][["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
+million_dollar_flats_df = df_filtered.query("resale_price >= 1_000_000")[["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
 million_dollar_flats_df["text"] = million_dollar_flats_df["flat_type"].str.title() +  " flat at " +  million_dollar_flats_df["address"].astype(str).str.title() + ", sold for $" + million_dollar_flats_df["resale_price"].apply(lambda x: f"{x:,}")
 # scatter plot
-scatter_df = df_filtered[["year", "town", "floor_area_sqm", "price_per_sqm"]]
-scatter_df = scatter_df.sort_values(by="year", ascending=True)
+scatter_df = df_filtered[["town", "storey_range", "resale_price", "floor_area_sqm"]]
+scatter_df = scatter_df.sort_values(by="storey_range", ascending=True)
 # resale transactions line chart
 resale_transactions_df = df_filtered.groupby("date").agg({"town": "count", "resale_price": "median"}).reset_index()
 index_benchmark = 400000 # price as of Jan 2020
@@ -189,6 +190,11 @@ with st.container():
         help="Total value of all transactions during this period",
         delta=get_delta("resale_price", "sum")
     )
+    met3.metric(
+        label="Million Dollar Flats",
+        value=f"{million_dollar_flats_df['address'].count():,}",
+        help="Total Million Dollar Flats transacted during this period"
+    )
     # row 2
     met4, met5, met6 = st.columns(3)
     met4.metric(
@@ -218,14 +224,144 @@ st.markdown("---")
 
 ###
 # WIP - create individual trace layers for $m flats by year?
-# WIP - include average PSF comparisons]
-# WIP - include transaction count comparison?   
+# include average PSF comparisons]
+# WIP - include transaction count comparison?    added as separate layer
 # show / hide choropeth layer?
-# include buttons to change mapbox style?
+# include buttons to change mapbox style? added buttons but not working
 ###
 with st.container():
-    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Price per sqm"])
+    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Transactions"])
     st.markdown("---")
+
+median_map_plot = px.choropleth_mapbox(
+    median_map_df,
+    geojson=st.session_state.geo_df,
+    locations="town",
+    color="median",
+    featureidkey="properties.PLN_AREA_N",
+    color_continuous_scale="Sunsetdark",
+    center={"lat": 1.35, "lon": 103.80},
+    opacity=0.75,
+    hover_name="town",
+    hover_data={
+        "town": False,
+        "count": ":,",
+        "median": ":,"
+    },
+    labels={"town": "Town", "count": "Transactions", "median": "Median Resale Price"},
+)
+
+median_map_plot.update_layout(
+    title={
+        "text": f"{year_option} Median Resale Price by Town",
+        # "x": 0.5,
+        "xanchor": "left",
+    },
+    height=700,
+    mapbox={
+        "accesstoken": st.secrets["mapbox_token"],
+        "style": "streets",
+        "zoom": 10,
+        "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
+    },
+    coloraxis_colorbar={
+        "title": None,
+        "y": 0.5,
+        "yanchor": "middle",
+        "len": 1,
+        "ypad": 0,
+        "xpad": 0
+    }
+)
+
+median_map_plot.add_scattermapbox(
+    below="",
+    lat=million_dollar_flats_df["latitude"],
+    lon=million_dollar_flats_df["longitude"],
+    text=million_dollar_flats_df["text"],
+    mode="markers",
+    marker={"symbol": "star", "size": 5, "opacity": 0.9, "allowoverlap": True},
+    hovertemplate="<b>Million-Dollar Flat</b><br><br>"
+    + "%{text}"
+    + "<extra></extra>",
+    hoverlabel={
+        "bgcolor": "snow",
+        "font_color" : "black"
+    },
+)
+
+# Add dropdown
+median_map_plot.update_layout(
+    updatemenus=[
+        dict(
+            type = "buttons",
+            direction = "right",
+            buttons=list([
+                dict(
+                    args=["mapbox_style", "streets"],
+                    label="Streets",
+                    method="relayout"
+                ),
+                dict(
+                    args=["mapbox_style", "dark"],
+                    label="Dark",
+                    method="relayout"
+                )
+            ]),
+            pad={"r": 10, "t": 10},
+            showactive=True,
+            x=0.05,
+            xanchor="left",
+            y=-0.07,
+            yanchor="bottom",
+            # visible=False # hide while buttons not working
+        ),
+        dict(
+            type = "buttons",
+            direction = "right",
+            buttons=list([
+                dict(
+                    args=["color", "median"],
+                    label="Median Price",
+                    method="restyle"
+                ),
+                dict(
+                    args=["color", "count"],
+                    label="Transactions",
+                    method="restyle"
+                )
+            ]),
+            pad={"r": 10, "t": 10},
+            showactive=True,
+            x=0.05,
+            xanchor="left",
+            y=-0.14,
+            yanchor="bottom",
+            # visible=False # hide while buttons not working
+        ),
+    ],
+    overwrite=True
+)
+
+# Add annotation
+median_map_plot.update_layout(
+    annotations=[
+        dict(
+            text="Map style:", 
+            showarrow=False,
+            x=0, 
+            y=-0.06, 
+            yref="paper", 
+            align="left"),
+        dict(
+            text="Overlay:", 
+            showarrow=False,
+            x=0,
+            y=-0.13, 
+            yref="paper", 
+            align="left")
+    ],
+)
 
 with row1_tab1:
     st.markdown(
@@ -234,80 +370,14 @@ with row1_tab1:
         
         - The planning areas are coloured based on the median resale price in each area during the selected time period.
         - Stars on the map represent transactions that have crossed the coveted S$1 million threshold.
+        - Toggle between Median Price or Transactions count overlay with the buttons below the map.
         """
     )
-
-    median_map_plot = px.choropleth_mapbox(
-        median_map_df,
-        geojson=st.session_state.geo_df,
-        locations="town",
-        color="median",
-        featureidkey="properties.PLN_AREA_N",
-        color_continuous_scale="Sunsetdark",
-        center={"lat": 1.35, "lon": 103.80},
-        opacity=0.75,
-        hover_name="town",
-        hover_data={
-            "town": False,
-            "count": ":,",
-            "median": ":,"
-        },
-        labels={"town": "Town", "count": "Transactions", "median": "Median Resale Price"},
-    )
-
-    median_map_plot.update_layout(
-        title={
-            "text": f"{year_option} Median Resale Price by Town",
-            "x": 0.5,
-            "xanchor": "center",
-        },
-        height=700,
-        mapbox={
-            "accesstoken": st.secrets["mapbox_token"],
-            "style": "streets",
-            "zoom": 10,
-            "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
-        },
-        coloraxis_colorbar={
-            "title": None,
-            "y": 0.5,
-            "yanchor": "middle",
-            "len": 1,
-            "ypad": 0,
-            "xpad": 0
-        }
-    )
-
-    median_map_plot.add_annotation(
-            text="Stars representing Million Dollar Flats",
-            xref="paper", yref="paper",
-            xanchor="left",
-            yanchor="top",
-            x=0,
-            y=1.045,
-            showarrow=False
-        )
-
-    median_map_plot.add_scattermapbox(
-        below="",
-        lat=million_dollar_flats_df["latitude"],
-        lon=million_dollar_flats_df["longitude"],
-        text=million_dollar_flats_df["text"],
-        mode="markers",
-        marker={"symbol": "star", "size": 5, "opacity": 0.9, "allowoverlap": True},
-        hovertemplate="<b>Million-Dollar Flat</b><br><br>"
-        + "%{text}"
-        + "<extra></extra>",
-        hoverlabel={
-            "bgcolor": "snow",
-            "font_color" : "black"
-        },
-    )
-
     st.plotly_chart(median_map_plot, use_container_width=True)
 
 with row1_tab2:
     st.markdown("WIP, check back soon. :)")
+    # visualise residential density in Singapore?
 #     st.markdown(
 #         """
 #         A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
@@ -316,40 +386,40 @@ with row1_tab2:
 #         """
 #     )
 
-#     map_plot = px.choropleth_mapbox(
-#         psqm_map_df,
-#         geojson=st.session_state.geo_df,
-#         locations="town",
-#         color="price_per_sqm",
-#         featureidkey="properties.PLN_AREA_N",
-#         color_continuous_scale="Sunsetdark",
-#         center={"lat": 1.35, "lon": 103.80},
-#         opacity=0.75,
-#         hover_name="town",
-#         hover_data={
-#             "town": False,
-#             "price_per_sqm": ":,"
-#         },
-#         labels={"town": "Town", "price_per_sqm": "Average Price per SQM"},
-#     )
+    # transaction_map_plot = px.choropleth_mapbox(
+    #     psqm_map_df,
+    #     geojson=st.session_state.geo_df,
+    #     locations="town",
+    #     color="price_per_sqm",
+    #     featureidkey="properties.PLN_AREA_N",
+    #     color_continuous_scale="Sunsetdark",
+    #     center={"lat": 1.35, "lon": 103.80},
+    #     opacity=0.75,
+    #     hover_name="town",
+    #     hover_data={
+    #         "town": False,
+    #         "price_per_sqm": ":,"
+    #     },
+    #     labels={"town": "Town", "price_per_sqm": "Average Price per SQM"},
+    # )
 
-#     map_plot.update_layout(
-#         title={
-#             "text": f"{year_option} Average Price per SQM by Town",
-#             "x": 0.5,
-#             "xanchor": "center",
-#         },
-#         height=700,
-#         mapbox={
-#             "accesstoken": st.secrets["mapbox_token"],
-#             "style": "dark",
-#             "zoom": 10,
-#             # "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
-#         },
-#         coloraxis_colorbar_y=0.64,
-#     )
+    # transaction_map_plot.update_layout(
+    #     title={
+    #         "text": f"{year_option} Transactions by Town",
+    #         "x": 0.5,
+    #         "xanchor": "center",
+    #     },
+    #     height=700,
+    #     mapbox={
+    #         "accesstoken": st.secrets["mapbox_token"],
+    #         "style": "streets",
+    #         "zoom": 10,
+    #         # "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
+    #     },
+    #     coloraxis_colorbar_y=0.64,
+    # )
 
-#     st.plotly_chart(map_plot, use_container_width=True)
+    # st.plotly_chart(transaction_map_plot, use_container_width=True)
 
 with st.container():
     row2_tab1, row2_tab2 = st.tabs(["Resale Price Index", "Median Resale Price"])
@@ -380,7 +450,7 @@ transactions_base = (
         ),
     )
     .properties(
-        height=300,
+        height=400,
     )
 )
 
@@ -418,7 +488,7 @@ price_index_base = (
         )
     )
     .properties(
-        height=300,
+        height=400,
     )
 )
 
@@ -447,7 +517,7 @@ median_price_base = (
         ),
     )
     .properties(
-        height=300,
+        height=400,
     )
 )
 
@@ -471,40 +541,6 @@ with row2_tab2:
     st.altair_chart(transactions_plot,use_container_width=True)
     st.altair_chart(median_price_plot,use_container_width=True)
     st.markdown("^ Median price across all flat types and models.")
-
-# with st.container():
-#     scatter_range_x = get_scale(scatter_df["floor_area_sqm"])
-#     scatter_range_y = get_scale(scatter_df["price_per_sqm"])
-
-#     scatter_plot = px.scatter(
-#         scatter_df,
-#         x="floor_area_sqm",
-#         y="price_per_sqm",
-#         color="town",
-#         hover_name="town",
-#         animation_frame="year",
-#         animation_group="town",
-#         # size="address",
-#         range_x=scatter_range_x,
-#         range_y=scatter_range_y
-#     )
-
-#     scatter_plot.update_layout(
-#         title={
-#             "text": f"Price",
-#             "x": 0.5,
-#             "xanchor": "center",
-#         },
-#         height=500,
-#         legend={
-#             "title": None,
-#             # "y": 0.5,
-#             # "yanchor": "middle",
-#         }
-#     )
-
-#     st.plotly_chart(scatter_plot, use_container_width=True)
-#     st.markdown("---")
 
 with st.container():
     st.markdown("Click to filter by flat types, hold shift to select multiple options.")
@@ -545,5 +581,42 @@ with st.container():
         .properties(height=300, width=400, title="Distribution of Floor Area by Flat Type")
     )
 
+    # use_container_width currently does not seem to work for concatenated charts
     st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
     st.markdown("\* Includes Multi-Generation flats")
+
+with st.container():
+    # scatter_range_x = get_scale(scatter_df["floor_area_sqm"])
+    # scatter_range_y = get_scale(scatter_df["storey_range"].as_ordered())
+
+    scatter_plot = px.density_heatmap(
+        scatter_df,
+        x="floor_area_sqm",
+        y="storey_range",
+        z="resale_price",
+        histfunc="avg",
+    )
+
+    scatter_plot.update_layout(
+        title={
+            "text": f"Effects of Floor Area and Storey Range on Resale Price",
+            # "x": 0.5,
+            "xanchor": "left",
+        },
+        xaxis_title="Floor Area (sqm)",
+        yaxis_title="Storey Range",
+        height=500,
+        coloraxis_colorbar={
+            "title": "Average Resale Price",
+            "y": 0.5,
+            "yanchor": "middle",
+            "len": 1,
+            "ypad": 0,
+            "xpad": 0
+        }
+    )
+
+
+
+    st.plotly_chart(scatter_plot, use_container_width=True)
+    st.markdown("---")
