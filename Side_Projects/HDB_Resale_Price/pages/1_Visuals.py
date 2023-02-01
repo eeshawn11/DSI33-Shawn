@@ -221,6 +221,7 @@ st.markdown("---")
 # WIP - include average PSF comparisons]
 # WIP - include transaction count comparison?   
 # show / hide choropeth layer?
+# include buttons to change mapbox style?
 ###
 with st.container():
     row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Price per sqm"])
@@ -471,39 +472,39 @@ with row2_tab2:
     st.altair_chart(median_price_plot,use_container_width=True)
     st.markdown("^ Median price across all flat types and models.")
 
-with st.container():
-    scatter_range_x = get_scale(scatter_df["floor_area_sqm"])
-    scatter_range_y = get_scale(scatter_df["price_per_sqm"])
+# with st.container():
+#     scatter_range_x = get_scale(scatter_df["floor_area_sqm"])
+#     scatter_range_y = get_scale(scatter_df["price_per_sqm"])
 
-    scatter_plot = px.scatter(
-        scatter_df,
-        x="floor_area_sqm",
-        y="price_per_sqm",
-        color="town",
-        hover_name="town",
-        animation_frame="year",
-        animation_group="town",
-        # size="address",
-        range_x=scatter_range_x,
-        range_y=scatter_range_y
-    )
+#     scatter_plot = px.scatter(
+#         scatter_df,
+#         x="floor_area_sqm",
+#         y="price_per_sqm",
+#         color="town",
+#         hover_name="town",
+#         animation_frame="year",
+#         animation_group="town",
+#         # size="address",
+#         range_x=scatter_range_x,
+#         range_y=scatter_range_y
+#     )
 
-    scatter_plot.update_layout(
-        title={
-            "text": f"Price",
-            "x": 0.5,
-            "xanchor": "center",
-        },
-        height=500,
-        legend={
-            "title": None,
-            # "y": 0.5,
-            # "yanchor": "middle",
-        }
-    )
+#     scatter_plot.update_layout(
+#         title={
+#             "text": f"Price",
+#             "x": 0.5,
+#             "xanchor": "center",
+#         },
+#         height=500,
+#         legend={
+#             "title": None,
+#             # "y": 0.5,
+#             # "yanchor": "middle",
+#         }
+#     )
 
-    st.plotly_chart(scatter_plot, use_container_width=True)
-    st.markdown("---")
+#     st.plotly_chart(scatter_plot, use_container_width=True)
+#     st.markdown("---")
 
 with st.container():
     st.markdown("Click to filter by flat types, hold shift to select multiple options.")
