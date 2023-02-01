@@ -186,28 +186,31 @@ with st.container():
         """
     )
     st.markdown(
-        f"Checking the shape of the dataframe, we currently have `{df.shape[0]}` rows, each of which represents a unique resale transaction based on the date of registration. "
+        f"Checking the shape of the dataframe, we currently have `{df.shape[0]:,}` rows, each of which represents a unique resale transaction based on the date of registration. "
     )
 
 st.markdown("---")
 
 if "df" not in st.session_state:
-    with st.spinner("Data transformation in progress..."):
+    with st.spinner("Transforming data..."):
         df["address"] = df["block"] + " " + df["street_name"]
         df_merged = df.merge(hdb_coordinates, how="left", on="address")
-        df_merged["month"] = pd.to_datetime(df_merged["month"], format="%Y-%m", errors="raise")
-        df_merged["remaining_lease"] = df_merged["lease_commence_date"].astype(int) + 99 - df_merged["month"].dt.year
+        df_merged.rename(columns={"month": "date"}, inplace=True)
+        df_merged["date"] = pd.to_datetime(df_merged["date"], format="%Y-%m", errors="raise")
+        df_merged["year"] = df_merged.date.dt.year
+        df_merged["remaining_lease"] = df_merged["lease_commence_date"].astype(int) + 99 - df_merged["date"].dt.year
         df_merged.rename(columns={'town': 'town_original'}, inplace=True)
         planning_areas, polygons = get_planning_areas()
         town_map = find_unique_locations(df_merged)
         df_merged["town"] = df_merged["address"].map(town_map)
         df_merged["price_per_sqm"] = df_merged["resale_price"].astype(float) / df_merged["floor_area_sqm"].astype(float)
         # changing dtypes to reduce space when storing in session_state
-        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address"]].astype("category")
+        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address", "year"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address", "year"]].astype("category")
         df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype("int32")
         df_merged[["latitude", "longitude"]] = df_merged[["latitude", "longitude"]].astype("float32")
         df_merged[["floor_area_sqm", "remaining_lease"]] = df_merged[["floor_area_sqm", "remaining_lease"]].astype(float).astype("int16")
         df_merged["price_per_sqm"] = df_merged["price_per_sqm"].astype("float16")
+
         st.session_state.df = df_merged
 
 with st.container():

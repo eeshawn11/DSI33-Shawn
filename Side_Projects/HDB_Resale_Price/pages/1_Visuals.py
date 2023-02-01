@@ -17,7 +17,7 @@ towns = st.session_state.df["town"].unique()
 towns = sorted(towns)
 towns.insert(0, "All")
 
-years = list(st.session_state.df["month"].dt.year.unique())
+years = list(st.session_state.df["year"].unique())
 years = sorted(years, reverse=True)
 years.insert(0, "All")
 
@@ -28,19 +28,9 @@ def magnitude(value: int) -> int:
     return int(np.floor(np.log10(abs(value))))
 
 
-def get_buffer(value: int) -> int:
-    try:
-        buffer = 10 ** magnitude(value) / magnitude(value)
-        return buffer
-    except:
-        return 0
-
-
 def get_scale(series: pd.Series) -> list[int, int]:
-    scale_min = series.min() - get_buffer(series.min())
-    if scale_min <= 50:
-        scale_min = 0
-    scale_max = series.max() + get_buffer(series.max())
+    scale_min = int(series.min() * 0.9)
+    scale_max = int(series.max() * 1.1)
     return [scale_min, scale_max]
 
 
@@ -131,7 +121,7 @@ def numerize(n, decimals=2):
         return is_negative_string + f"{n:,}"
 
 
-# create sidebar for filtering dashboard
+# sidebar for filtering dashboard
 with st.sidebar:
     st.header("Filter options")
     town_option = st.selectbox(label="District", options=towns)
@@ -154,27 +144,39 @@ if town_option == "All":
     if year_option == "All":
         df_filtered = st.session_state.df
     else:
-        df_filtered = st.session_state.df.query("month.dt.year == @year_option")
+        df_filtered = st.session_state.df.query("date.dt.year == @year_option")
         df_filtered_previous_year = st.session_state.df.query(
-            "month.dt.year == @year_option-1"
+            "date.dt.year == @year_option-1"
         )
 else:
     if year_option == "All":
         df_filtered = st.session_state.df.query("town.str.contains(@town_option)")
     else:
         df_filtered = st.session_state.df.query(
-            "month.dt.year == @year_option & town.str.contains(@town_option)"
+            "date.dt.year == @year_option & town.str.contains(@town_option)"
         )
         df_filtered_previous_year = st.session_state.df.query(
-            "month.dt.year == @year_option-1 & town.str.contains(@town_option)"
+            "date.dt.year == @year_option-1 & town.str.contains(@town_option)"
         )
 
-# create dataframes for individual plot displays
-map_df = df_filtered.groupby("town").resale_price.agg(["count", "median"]).reset_index()
-resale_price = df_filtered.groupby("month").resale_price.median().reset_index()
-resale_transactions = df_filtered.groupby("month").town.count().reset_index()
-million_dollar_flats = df_filtered[df_filtered["resale_price"] >= 1_000_000][["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
-million_dollar_flats["text"] = million_dollar_flats["flat_type"].str.title() +  " flat at " +  million_dollar_flats["address"].astype(str).str.title() + ", sold for $" + million_dollar_flats["resale_price"].apply(lambda x: f"{x:,}")
+# median price choropleth
+median_map_df = df_filtered.groupby("town").resale_price.agg(["count", "median"]).reset_index()
+# choropleth scatter overlay
+million_dollar_flats_df = df_filtered[df_filtered["resale_price"] >= 1_000_000][["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
+million_dollar_flats_df["text"] = million_dollar_flats_df["flat_type"].str.title() +  " flat at " +  million_dollar_flats_df["address"].astype(str).str.title() + ", sold for $" + million_dollar_flats_df["resale_price"].apply(lambda x: f"{x:,}")
+# scatter plot
+scatter_df = df_filtered[["date", "town", "floor_area_sqm", "price_per_sqm"]]
+scatter_df["year"] = scatter_df.date.dt.year
+scatter_df = scatter_df.sort_values(by="year", ascending=True)
+# resale transactions line chart
+resale_transactions_df = df_filtered.groupby("date").agg({"town": "count", "resale_price": "median"}).reset_index()
+index_benchmark = 400000 # price as of Jan 2020
+resale_transactions_df["price_index"] = resale_transactions_df["resale_price"] / index_benchmark * 100
+resale_transactions_df[["resale_price", "price_index"]] = resale_transactions_df[["resale_price", "price_index"]].round(0).astype("int32")
+# flat type distribution
+flat_type_df = df_filtered[["flat_type", "floor_area_sqm"]]
+flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("MULTI-GENERATION", "EXECUTIVE")
+flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("EXECUTIVE", "EXECUTIVE*")
 
 with st.container():
     st.title("Singapore HDB Resale Price from 2012")
@@ -224,10 +226,16 @@ st.markdown("---")
 
 
 ###
-# WIP - create individual trace layers for $m flats by year
-# WIP - include average PSF comparisons
+# WIP - create individual trace layers for $m flats by year?
+# WIP - include average PSF comparisons]
+# WIP - include transaction count comparison?   
+# show / hide choropeth layer?
 ###
 with st.container():
+    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Price per sqm"])
+    st.markdown("---")
+
+with row1_tab1:
     st.markdown(
         """
         A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
@@ -237,15 +245,15 @@ with st.container():
         """
     )
 
-    map_plot = px.choropleth_mapbox(
-        map_df,
+    median_map_plot = px.choropleth_mapbox(
+        median_map_df,
         geojson=st.session_state.geo_df,
         locations="town",
         color="median",
         featureidkey="properties.PLN_AREA_N",
         color_continuous_scale="Sunsetdark",
         center={"lat": 1.35, "lon": 103.80},
-        opacity=0.5,
+        opacity=0.75,
         hover_name="town",
         hover_data={
             "town": False,
@@ -255,7 +263,7 @@ with st.container():
         labels={"town": "Town", "count": "Transactions", "median": "Median Resale Price"},
     )
 
-    map_plot.update_layout(
+    median_map_plot.update_layout(
         title={
             "text": f"{year_option} Median Resale Price by Town",
             "x": 0.5,
@@ -266,15 +274,33 @@ with st.container():
             "accesstoken": st.secrets["mapbox_token"],
             "style": "dark",
             "zoom": 10,
-            "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15}
+            "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
         },
+        coloraxis_colorbar={
+            "title": None,
+            "y": 0.5,
+            "yanchor": "middle",
+            "len": 1,
+            "ypad": 0,
+            "xpad": 0
+        }
     )
 
-    map_plot.add_scattermapbox(
+    median_map_plot.add_annotation(
+            text="Stars representing Million Dollar Flats",
+            xref="paper", yref="paper",
+            xanchor="left",
+            yanchor="top",
+            x=0,
+            y=1.045,
+            showarrow=False
+        )
+
+    median_map_plot.add_scattermapbox(
         below="",
-        lat=million_dollar_flats["latitude"],
-        lon=million_dollar_flats["longitude"],
-        text=million_dollar_flats["text"],
+        lat=million_dollar_flats_df["latitude"],
+        lon=million_dollar_flats_df["longitude"],
+        text=million_dollar_flats_df["text"],
         mode="markers",
         marker={"symbol": "star", "size": 5, "opacity": 0.9, "allowoverlap": True},
         hovertemplate="<b>Million-Dollar Flat</b><br><br>"
@@ -286,146 +312,298 @@ with st.container():
         },
     )
 
-    st.plotly_chart(map_plot, use_container_width=True)
+    st.plotly_chart(median_map_plot, use_container_width=True)
+
+with row1_tab2:
+    st.markdown("WIP, come back soon. :)")
+#     st.markdown(
+#         """
+#         A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
+        
+#         - The planning areas are coloured based on the average price per sqm in each area during the selected time period.
+#         """
+#     )
+
+#     map_plot = px.choropleth_mapbox(
+#         psqm_map_df,
+#         geojson=st.session_state.geo_df,
+#         locations="town",
+#         color="price_per_sqm",
+#         featureidkey="properties.PLN_AREA_N",
+#         color_continuous_scale="Sunsetdark",
+#         center={"lat": 1.35, "lon": 103.80},
+#         opacity=0.75,
+#         hover_name="town",
+#         hover_data={
+#             "town": False,
+#             "price_per_sqm": ":,"
+#         },
+#         labels={"town": "Town", "price_per_sqm": "Average Price per SQM"},
+#     )
+
+#     map_plot.update_layout(
+#         title={
+#             "text": f"{year_option} Average Price per SQM by Town",
+#             "x": 0.5,
+#             "xanchor": "center",
+#         },
+#         height=700,
+#         mapbox={
+#             "accesstoken": st.secrets["mapbox_token"],
+#             "style": "dark",
+#             "zoom": 10,
+#             # "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
+#         },
+#         coloraxis_colorbar_y=0.64,
+#     )
+
+#     st.plotly_chart(map_plot, use_container_width=True)
 
 with st.container():
-    chart1, chart2 = st.columns(2)
+    row2_tab1, row2_tab2 = st.tabs(["Resale Price Index", "Median Resale Price"])
+    st.markdown("---")
 
-    with chart1:
-        # visualise median monthly resale price
-        median_price_plot = (
-            alt.Chart(resale_price, title="Median Resale Price by Month")
-            .mark_line(point=True)
-            .encode(
-                alt.X(
-                    "month:T",
-                    axis=alt.Axis(
-                        formatType="time",
-                        format="%b-%y",
-                        title="Transaction Period",
-                        grid=False,
-                        tickCount="month",
-                    ),
-                ),
-                alt.Y(
-                    "resale_price:Q",
-                    axis=alt.Axis(
-                        title="Resale Price (S$)", formatType="number", format="~s"
-                    ),
-                    scale=alt.Scale(domain=get_scale(resale_price["resale_price"])),
-                ),
+
+###
+# WIP - condense below code into function?
+###
+transactions_by_month_base = (
+    alt.Chart(resale_transactions_df, title="Total Transactions per Month")
+    .mark_line(
+        color="green"
+    )
+    .encode(
+        alt.X(
+            "date:T",
+            axis=alt.Axis(
+                formatType="time",
+                format="%b-%y",
+                title=None,
+                grid=False,
+                tickCount="month",
+            ),
+        ),
+        alt.Y(
+            "town:Q",
+            axis=alt.Axis(
+                title="Transactions",
+                formatType="number",
             )
-            .properties(
-                height=350,
+        ),
+    )
+    .properties(
+        height=300,
+    )
+)
+
+# creates selection that chooses the nearest point
+transactions_nearest = alt.selection_single(
+    nearest=True, on="mouseover", fields=["date"], empty="none"
+)
+
+# selectors that tell us the x-value of the cursor
+transactions_selector = (
+    transactions_by_month_base.mark_point(color="red")
+    .encode(
+        x="date",
+        opacity=alt.condition(transactions_nearest, alt.value(1), alt.value(0)),
+        tooltip=[
+            alt.Tooltip("date", title="Transaction Period", format="%b-%y"),
+            alt.Tooltip("town", title="Resale Transactions"),
+        ],
+    )
+    .add_selection(transactions_nearest)
+)
+
+# draw a rule at location of selection
+transactions_rule = (
+    transactions_by_month_base.mark_rule(color="gray")
+    .encode(
+        x="date",
+    )
+    .transform_filter(transactions_nearest)
+)
+
+transactions_by_month_plot = transactions_by_month_base + transactions_selector + transactions_rule
+
+resale_price_index_base = (
+    alt.Chart(resale_transactions_df, title="Resale Price Index^")
+    .mark_line(
+        color="orange"
+    )
+    .encode(
+        alt.X(
+            "date:T",
+            axis=alt.Axis(
+                formatType="time",
+                format="%b-%y",
+                title="Transaction Period",
+                grid=False,
+                tickCount="month",
             )
+        ),
+        alt.Y(
+            "price_index:Q", 
+            axis=alt.Axis(
+                title="Price Index",
+                grid=False
+            ),
+            scale=alt.Scale(domain=get_scale(resale_transactions_df["price_index"]))
         )
+    )
+    .properties(
+        height=300,
+    )
+)
 
-        # creates selection that chooses the nearest point
-        median_price_nearest = alt.selection_single(
-            nearest=True, on="mouseover", fields=["month"], empty="none"
-        )
+# creates selection that chooses the nearest point
+resale_price_index_nearest = alt.selection_single(
+    nearest=True, on="mouseover", fields=["date"], empty="none"
+)
 
-        # selectors that tell us the x-value of the cursor
-        median_price_selector = (
-            median_price_plot.mark_point(color="red")
-            .encode(
-                x="month",
-                opacity=alt.condition(median_price_nearest, alt.value(1), alt.value(0)),
-                tooltip=[
-                    alt.Tooltip("month", title="Transaction Period", format="%b-%y"),
-                    alt.Tooltip(
-                        "resale_price", title="Median Resale Price", format="$,"
-                    ),
-                ],
+# selectors that tell us the x-value of the cursor
+resale_price_index_selector = (
+    resale_price_index_base.mark_point(color="red")
+    .encode(
+        x="date",
+        opacity=alt.condition(resale_price_index_nearest, alt.value(1), alt.value(0)),
+        tooltip=[
+            alt.Tooltip("date", title="Transaction Period", format="%b-%y"),
+            alt.Tooltip(
+                "price_index", title="Price Index"
+            ),
+        ]
+    )
+    .add_selection(resale_price_index_nearest)
+)
+
+# draw a rule at location of selection
+resale_price_index_rule = (
+    resale_price_index_base.mark_rule(color="gray")
+    .encode(
+        x="date",
+    )
+    .transform_filter(resale_price_index_nearest)
+)
+
+resale_price_index_plot = resale_price_index_base + resale_price_index_selector + resale_price_index_rule
+
+median_price_base = (
+    alt.Chart(resale_transactions_df, title="Median Resale Price^ by Month")
+    .mark_line()
+    .encode(
+        alt.X(
+            "date:T",
+            axis=alt.Axis(
+                formatType="time",
+                format="%b-%y",
+                title="Transaction Period",
+                grid=False,
+                tickCount="month",
+            ),
+        ),
+        alt.Y(
+            "resale_price:Q",
+            axis=alt.Axis(
+                title="Resale Price (S$)", formatType="number", format="~s"
+            ),
+        ),
+    )
+    .properties(
+        height=300,
+    )
+)
+
+# creates selection that chooses the nearest point
+median_price_nearest = alt.selection_single(
+    nearest=True, on="mouseover", fields=["date"], empty="none"
+)
+
+# selectors that tell us the x-value of the cursor
+median_price_selector = (
+    median_price_base.mark_point(color="red")
+    .encode(
+        x="date",
+        opacity=alt.condition(median_price_nearest, alt.value(1), alt.value(0)),
+        tooltip=[
+            alt.Tooltip("date", title="Transaction Period", format="%b-%y"),
+            alt.Tooltip(
+                "resale_price", title="Median Resale Price", format="$,"
+            ),
+        ]
+    )
+    .add_selection(median_price_nearest)
+)
+
+# draw a rule at location of selection
+median_price_rule = (
+    median_price_base.mark_rule(color="gray")
+    .encode(
+        x="date",
+    )
+    .transform_filter(median_price_nearest)
+)
+
+median_price_plot = median_price_base + median_price_selector + median_price_rule
+
+with row2_tab1:
+    # show line at price index = 100
+    if resale_transactions_df.price_index.min() <= 100 and resale_transactions_df.price_index.max() >= 100:
+        resale_price_index_line = alt.Chart(
+            resale_transactions_df).mark_rule(color="gray", strokeDash=[4, 4], strokeOpacity=0.1).encode(y=alt.datum(100)
             )
-            .add_selection(median_price_nearest)
-        )
+        st.altair_chart(transactions_by_month_plot,use_container_width=True)
+        st.altair_chart(resale_price_index_plot + resale_price_index_line,use_container_width=True)
+    else:
+        st.altair_chart(transactions_by_month_plot, use_container_width=True)
+        st.altair_chart(resale_price_index_plot,use_container_width=True)
+    st.markdown("^ Base period is taken at Jan 2020 ($400k), with index at 100")
 
-        # draw a rule at location of selection
-        median_price_rule = (
-            median_price_plot.mark_rule(color="gray")
-            .encode(
-                x="month",
-            )
-            .transform_filter(median_price_nearest)
-        )
+with row2_tab2:
+    st.altair_chart(transactions_by_month_plot,use_container_width=True)
+    st.altair_chart(median_price_plot,use_container_width=True)
+    st.markdown("^ Median price across all towns, flat types and models.")
 
-        st.altair_chart(
-            median_price_plot + median_price_selector + median_price_rule,
-            use_container_width=True,
-        )
+# with st.container():
+#     scatter_range_x = get_scale(scatter_df["floor_area_sqm"])
+#     scatter_range_y = get_scale(scatter_df["price_per_sqm"])
 
-    with chart2:
-        # visualise number of transactions by month
-        transactions_by_month_plot = (
-            alt.Chart(resale_transactions, title="Total Transactions per Month")
-            .mark_line(
-                point=alt.OverlayMarkDef(filled=True, fill="green"), color="green"
-            )
-            .encode(
-                alt.X(
-                    "month:T",
-                    axis=alt.Axis(
-                        formatType="time",
-                        format="%b-%y",
-                        title="Transaction Period",
-                        grid=False,
-                        tickCount="month",
-                    ),
-                ),
-                alt.Y(
-                    "town:Q",
-                    axis=alt.Axis(
-                        title="Transactions",
-                        formatType="number",
-                    ),
-                    scale=alt.Scale(domain=get_scale(resale_transactions["town"])),
-                ),
-            )
-            .properties(
-                height=350,
-            )
-        )
+#     scatter_plot = px.scatter(
+#         scatter_df,
+#         x="floor_area_sqm",
+#         y="price_per_sqm",
+#         color="town",
+#         hover_name="town",
+#         animation_frame="year",
+#         animation_group="town",
+#         size="address",
+#         range_x=scatter_range_x,
+#         range_y=scatter_range_y
+#     )
 
-        # creates selection that chooses the nearest point
-        transactions_nearest = alt.selection_single(
-            nearest=True, on="mouseover", fields=["month"], empty="none"
-        )
+#     scatter_plot.update_layout(
+#         title={
+#             "text": f"Price",
+#             "x": 0.5,
+#             "xanchor": "center",
+#         },
+#         height=500,
+#         legend={
+#             "title": None,
+#             # "y": 0.5,
+#             # "yanchor": "middle",
+#         }
+#     )
 
-        # selectors that tell us the x-value of the cursor
-        transactions_selector = (
-            transactions_by_month_plot.mark_point(color="red")
-            .encode(
-                x="month",
-                opacity=alt.condition(transactions_nearest, alt.value(1), alt.value(0)),
-                tooltip=[
-                    alt.Tooltip("month", title="Transaction Period", format="%b-%y"),
-                    alt.Tooltip("town", title="Resale Transactions"),
-                ],
-            )
-            .add_selection(transactions_nearest)
-        )
-
-        # draw a rule at location of selection
-        transactions_rule = (
-            transactions_by_month_plot.mark_rule(color="gray")
-            .encode(
-                x="month",
-            )
-            .transform_filter(transactions_nearest)
-        )
-
-        st.altair_chart(
-            transactions_by_month_plot + transactions_selector + transactions_rule,
-            use_container_width=True,
-        )
+#     st.plotly_chart(scatter_plot, use_container_width=True)
+#     st.markdown("---")
 
 with st.container():
     st.markdown("Click to filter by flat types, hold shift to select multiple options.")
     selector = alt.selection_multi(empty="all", fields=["flat_type"])
 
     flat_base = alt.Chart(
-        df_filtered,
+        flat_type_df,
     ).add_selection(selector)
 
     flat_type_plot = (
@@ -441,7 +619,7 @@ with st.container():
                 alt.Tooltip("count()", title="Transactions", format=","),
             ],
         )
-        .properties(height=350, title="Transactions by Flat Type")
+        .properties(height=300, width=400, title="Transactions by Flat Type")
     )
 
     floor_area_plot = (
@@ -456,44 +634,8 @@ with st.container():
             alt.Color("flat_type:N", legend=None),
         )
         .transform_filter(selector)
-        .properties(height=350, title="Distribution of Floor Area by Flat Type")
+        .properties(height=300, width=400, title="Distribution of Floor Area by Flat Type")
     )
 
     st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
-
-###
-# WIP - create chart showing relationship between property age, size and price?
-###
-# with st.container():
-#     property_age = (
-#         alt.Chart(df_filtered)
-#         .mark_circle()
-#         .encode(
-#             x="age:Q",
-#             y="resale_price:Q",
-#             color="flat_type:N"
-#             # alt.X(
-#             #     "age:Q",
-#                 # axis=alt.Axis(
-#                 #     formatType="time",
-#                 #     format="%b-%y",
-#                 #     title="Transaction Period",
-#                 #     grid=False,
-#                 #     tickCount="month",
-#                 # ),
-#             # ),
-#             # alt.Y(
-#             #     "resale_price:Q",
-#                 # axis=alt.Axis(
-#                 #     title="Transactions",
-#                 #     formatType="number",
-#                 # ),
-#                 # scale=alt.Scale(domain=get_scale(df_filtered["town"])),
-#             # ),
-#         )
-#         # .properties(
-#         #     height=300,
-#         # )
-#     )
-
-#     st.altair_chart(property_age, use_container_width=True)
+    st.markdown("\* Includes Multi-Generation flats")
