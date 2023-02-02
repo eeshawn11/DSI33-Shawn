@@ -203,13 +203,14 @@ if "df" not in st.session_state:
         df_merged["date"] = pd.to_datetime(df_merged["date"], format="%Y-%m", errors="raise")
         df_merged["year"] = df_merged.date.dt.year
         df_merged["remaining_lease"] = df_merged["lease_commence_date"].astype(int) + 99 - df_merged["date"].dt.year
-        df_merged.rename(columns={'town': 'town_original'}, inplace=True)
+        df_merged = df_merged.rename(columns={'town': 'town_original'})
         planning_areas, polygons = get_planning_areas()
         town_map = find_unique_locations(df_merged)
         df_merged["town"] = df_merged["address"].map(town_map)
         df_merged["price_per_sqm"] = df_merged["resale_price"].astype(float) / df_merged["floor_area_sqm"].astype(float)
         # changing dtypes to reduce space when storing in session_state
-        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address", "year"]] = df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address", "year"]].astype("category")
+        df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address", "year"]] = (df_merged[["town_original", "flat_type", "flat_model", "storey_range", "town", "address", "year"]]
+                                                                                                                .astype("category"))
         df_merged["resale_price"] = df_merged["resale_price"].astype(float).astype("int32")
         df_merged[["latitude", "longitude"]] = df_merged[["latitude", "longitude"]].astype("float32")
         df_merged[["floor_area_sqm", "remaining_lease"]] = df_merged[["floor_area_sqm", "remaining_lease"]].astype(float).astype("int16")
@@ -239,6 +240,6 @@ with st.container():
     st.dataframe(st.session_state.df.head(3), use_container_width=True)
 
 try:
-    st.session_state.df.drop(columns=["town_original", "_id", "block", "street_name"], inplace=True)
+    st.session_state.df = st.session_state.df.drop(columns=["town_original", "_id", "block", "street_name"])
 except:
     pass

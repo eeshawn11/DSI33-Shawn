@@ -153,13 +153,23 @@ else:
         )
 
 # median price choropleth
-choropleth_df = df_filtered.groupby("town").agg(transactions=("resale_price", "count"), resale_price=("resale_price", "median"), remaining_lease=("remaining_lease", "median")).reset_index()
+choropleth_df = (df_filtered
+                    .groupby("town")
+                    .agg(
+                        transactions=("resale_price", "count"), 
+                        resale_price=("resale_price", "median"), 
+                        remaining_lease=("remaining_lease", "median"))
+                    .reset_index())
 choropleth_df["age"] = 99 - choropleth_df["remaining_lease"]
 # choropleth scatter overlay
-million_dollar_flats_df = df_filtered.query("resale_price >= 1_000_000")[["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
-million_dollar_flats_df["text"] = million_dollar_flats_df["flat_type"].str.title() +  " flat at " +  million_dollar_flats_df["address"].astype(str).str.title() + ", sold for $" + million_dollar_flats_df["resale_price"].apply(lambda x: f"{x:,}")
+million_dollar_flats_df = df_filtered.query("resale_price >= 1_000_000")[["resale_price", "town", "latitude", "longitude", "address", "flat_type"]].copy()
+million_dollar_flats_df["text"] = (million_dollar_flats_df["flat_type"].str.title() 
+                                    +  " flat at " 
+                                    +  million_dollar_flats_df["address"].astype(str).str.title() 
+                                    + ", sold for $" 
+                                    + million_dollar_flats_df["resale_price"].apply(lambda x: f"{x:,}"))
 # density heatmap
-density_heatmap_df = df_filtered[["town", "storey_range", "resale_price", "floor_area_sqm"]]
+density_heatmap_df = df_filtered[["town", "storey_range", "resale_price", "floor_area_sqm"]].copy()
 density_heatmap_df = density_heatmap_df.sort_values(by="storey_range", ascending=True)
 # resale transactions line chart
 resale_transactions_df = df_filtered.groupby("date").agg({"town": "count", "resale_price": "median"}).reset_index()
@@ -167,7 +177,7 @@ index_benchmark = 400000 # price as of Jan 2020
 resale_transactions_df["price_index"] = resale_transactions_df["resale_price"] / index_benchmark * 100
 resale_transactions_df[["resale_price", "price_index"]] = resale_transactions_df[["resale_price", "price_index"]].round(0).astype("int32")
 # flat type distribution
-flat_type_df = df_filtered[["flat_type", "floor_area_sqm"]]
+flat_type_df = df_filtered[["flat_type", "floor_area_sqm"]].copy()
 flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("MULTI-GENERATION", "EXECUTIVE")
 flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("EXECUTIVE", "EXECUTIVE*")
 
