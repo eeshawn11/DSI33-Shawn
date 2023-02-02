@@ -54,7 +54,7 @@ def get_data():
     return content
 
 
-# @st.experimental_memo(max_entries=1)
+@st.experimental_memo(max_entries=1)
 def get_coords_df():
     return pd.read_csv(
         path+"/assets/hdb_coords.csv",
