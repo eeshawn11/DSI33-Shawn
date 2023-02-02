@@ -598,7 +598,7 @@ flat_type_plot = (
             alt.Tooltip("count()", title="Transactions", format=","),
         ],
     )
-    .properties(height=300, width=400, title="Transactions by Flat Type")
+    .properties(height=250, width=400, title="Transactions by Flat Type")
 )
 
 floor_area_plot = (
@@ -613,7 +613,7 @@ floor_area_plot = (
         alt.Color("flat_type:N", legend=None),
     )
     .transform_filter(flat_type_selector)
-    .properties(height=300, width=400, title="Distribution of Floor Area by Flat Type")
+    .properties(height=250, width=400, title="Distribution of Floor Area by Flat Type")
 )
 
 with st.container():
