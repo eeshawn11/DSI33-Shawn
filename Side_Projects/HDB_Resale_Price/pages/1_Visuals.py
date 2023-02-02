@@ -255,7 +255,7 @@ median_map_plot.update_layout(
         "text": f"{year_option} Median Resale Price by Town",
         "xanchor": "left",
     },
-    height=700,
+    height=600,
     mapbox={
         "accesstoken": st.secrets["mapbox_token"],
         "style": "streets",
@@ -397,7 +397,7 @@ transaction_map_plot.update_layout(
         "x": 0.5,
         "xanchor": "center",
     },
-    height=700,
+    height=600,
     mapbox={
         "accesstoken": st.secrets["mapbox_token"],
         "style": "streets",
@@ -453,7 +453,7 @@ transactions_base = (
         ),
     )
     .properties(
-        height=400,
+        height=350,
     )
 )
 
@@ -491,7 +491,7 @@ price_index_base = (
         )
     )
     .properties(
-        height=400,
+        height=350,
     )
 )
 
@@ -520,7 +520,7 @@ median_price_base = (
         ),
     )
     .properties(
-        height=400,
+        height=350,
     )
 )
 
@@ -565,6 +565,7 @@ million_dollar_scatter.update_layout(
     title="Million Dollar Resale Transactions",
     xaxis_title="Transaction Date",
     yaxis_title="Resale Price (S$)",
+    height=350,
     coloraxis_colorbar={
         "title": "Floor Area (sqm)",
         "y": 0.5,
@@ -637,7 +638,7 @@ density_heatmap_plot.update_layout(
     },
     xaxis_title="Floor Area (sqm)",
     yaxis_title="Storey Range",
-    height=500,
+    height=350,
     coloraxis_colorbar={
         "title": "Average Resale Price",
         "y": 0.5,
