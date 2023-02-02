@@ -36,6 +36,7 @@ def retrieve_data(resource_id: str, n: int):
 
 @st.experimental_memo(show_spinner=False, ttl=2_630_000)  # dataset is updated monthly
 def get_data():
+    print("Fetching data")
     content = pd.DataFrame()
     for resource_id in resource_ids:
         time.sleep(1)
