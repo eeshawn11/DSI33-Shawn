@@ -314,7 +314,7 @@ median_map_plot.update_layout(
             xanchor="left",
             y=-0.07,
             yanchor="bottom",
-            # visible=False # hide while buttons not working
+            visible=False # hide while buttons not working
         ),
         dict(
             type = "buttons",
@@ -337,7 +337,7 @@ median_map_plot.update_layout(
             xanchor="left",
             y=-0.14,
             yanchor="bottom",
-            # visible=False # hide while buttons not working
+            visible=False # hide while buttons not working
         ),
     ],
     overwrite=True
@@ -370,7 +370,7 @@ with row1_tab1:
         
         - The planning areas are coloured based on the median resale price in each area during the selected time period.
         - Stars on the map represent transactions that have crossed the coveted S$1 million threshold.
-        - Toggle between Median Price or Transactions count overlay with the buttons below the map.
+        - Toggle between Median Price or Transactions count overlay with the buttons below the map. (WIP)
         """
     )
     st.plotly_chart(median_map_plot, use_container_width=True)
