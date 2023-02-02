@@ -153,13 +153,14 @@ else:
         )
 
 # median price choropleth
-median_map_df = df_filtered.groupby("town").resale_price.agg(["count", "median"]).reset_index()
+choropleth_df = df_filtered.groupby("town").agg(transactions=("resale_price", "count"), resale_price=("resale_price", "median"), remaining_lease=("remaining_lease", "median")).reset_index()
+choropleth_df["age"] = 99 - choropleth_df["remaining_lease"]
 # choropleth scatter overlay
 million_dollar_flats_df = df_filtered.query("resale_price >= 1_000_000")[["resale_price", "town", "latitude", "longitude", "address", "flat_type"]]
 million_dollar_flats_df["text"] = million_dollar_flats_df["flat_type"].str.title() +  " flat at " +  million_dollar_flats_df["address"].astype(str).str.title() + ", sold for $" + million_dollar_flats_df["resale_price"].apply(lambda x: f"{x:,}")
-# scatter plot
-scatter_df = df_filtered[["town", "storey_range", "resale_price", "floor_area_sqm"]]
-scatter_df = scatter_df.sort_values(by="storey_range", ascending=True)
+# density heatmap
+density_heatmap_df = df_filtered[["town", "storey_range", "resale_price", "floor_area_sqm"]]
+density_heatmap_df = density_heatmap_df.sort_values(by="storey_range", ascending=True)
 # resale transactions line chart
 resale_transactions_df = df_filtered.groupby("date").agg({"town": "count", "resale_price": "median"}).reset_index()
 index_benchmark = 400000 # price as of Jan 2020
@@ -171,7 +172,7 @@ flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("MULTI-GENERAT
 flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("EXECUTIVE", "EXECUTIVE*")
 
 with st.container():
-    st.title("Singapore HDB Resale Price from 2012")
+    st.title("Singapore HDB Resale Price from 2000")
 
 with st.container():
     st.markdown(f"## {year_option} transactions in {town_option}")
@@ -224,37 +225,34 @@ st.markdown("---")
 
 ###
 # WIP - create individual trace layers for $m flats by year?
-# include average PSF comparisons]
-# WIP - include transaction count comparison?    added as separate layer
 # show / hide choropeth layer?
 # include buttons to change mapbox style? added buttons but not working
 ###
 with st.container():
-    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Transactions"])
+    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Property Age"])
     st.markdown("---")
 
 median_map_plot = px.choropleth_mapbox(
-    median_map_df,
+    choropleth_df,
     geojson=st.session_state.geo_df,
     locations="town",
-    color="median",
+    color="resale_price",
     featureidkey="properties.PLN_AREA_N",
-    color_continuous_scale="Sunsetdark",
+    color_continuous_scale="burg",
     center={"lat": 1.35, "lon": 103.80},
-    opacity=0.75,
+    opacity=0.8,
     hover_name="town",
     hover_data={
         "town": False,
-        "count": ":,",
-        "median": ":,"
+        "transactions": ":,",
+        "resale_price": ":,"
     },
-    labels={"town": "Town", "count": "Transactions", "median": "Median Resale Price"},
+    labels={"town": "Town", "transactions": "Transactions", "resale_price": "Median Resale Price"},
 )
 
 median_map_plot.update_layout(
     title={
         "text": f"{year_option} Median Resale Price by Town",
-        # "x": 0.5,
         "xanchor": "left",
     },
     height=700,
@@ -290,7 +288,7 @@ median_map_plot.add_scattermapbox(
     },
 )
 
-# Add dropdown
+# Add buttons for control
 median_map_plot.update_layout(
     updatemenus=[
         dict(
@@ -321,12 +319,12 @@ median_map_plot.update_layout(
             direction = "right",
             buttons=list([
                 dict(
-                    args=["color", "median"],
+                    args=["color", "resale_price"],
                     label="Median Price",
                     method="restyle"
                 ),
                 dict(
-                    args=["color", "count"],
+                    args=["color", "transactions"],
                     label="Transactions",
                     method="restyle"
                 )
@@ -375,54 +373,59 @@ with row1_tab1:
     )
     st.plotly_chart(median_map_plot, use_container_width=True)
 
+transaction_map_plot = px.choropleth_mapbox(
+    choropleth_df,
+    geojson=st.session_state.geo_df,
+    locations="town",
+    color="age",
+    featureidkey="properties.PLN_AREA_N",
+    color_continuous_scale="mint",
+    center={"lat": 1.35, "lon": 103.80},
+    opacity=0.8,
+    hover_name="town",
+    hover_data={
+        "town": False,
+        "age": True,
+        "resale_price": ":,",
+    },
+    labels={"town": "Town", "age": "Median Age", "resale_price": "Median Resale Price"},
+)
+
+transaction_map_plot.update_layout(
+    title={
+        "text": f"{year_option} Median Age of Property at Transaction",
+        "x": 0.5,
+        "xanchor": "center",
+    },
+    height=700,
+    mapbox={
+        "accesstoken": st.secrets["mapbox_token"],
+        "style": "streets",
+        "zoom": 10,
+        "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
+    },
+    coloraxis_colorbar={
+        "title": None,
+        "y": 0.5,
+        "yanchor": "middle",
+        "len": 1,
+        "ypad": 0,
+        "xpad": 0
+    }
+)
+
 with row1_tab2:
-    st.markdown("WIP, check back soon. :)")
-    # visualise residential density in Singapore?
-#     st.markdown(
-#         """
-#         A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
+    st.markdown(
+        """
+        A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
         
-#         - The planning areas are coloured based on the average price per sqm in each area during the selected time period.
-#         """
-#     )
-
-    # transaction_map_plot = px.choropleth_mapbox(
-    #     psqm_map_df,
-    #     geojson=st.session_state.geo_df,
-    #     locations="town",
-    #     color="price_per_sqm",
-    #     featureidkey="properties.PLN_AREA_N",
-    #     color_continuous_scale="Sunsetdark",
-    #     center={"lat": 1.35, "lon": 103.80},
-    #     opacity=0.75,
-    #     hover_name="town",
-    #     hover_data={
-    #         "town": False,
-    #         "price_per_sqm": ":,"
-    #     },
-    #     labels={"town": "Town", "price_per_sqm": "Average Price per SQM"},
-    # )
-
-    # transaction_map_plot.update_layout(
-    #     title={
-    #         "text": f"{year_option} Transactions by Town",
-    #         "x": 0.5,
-    #         "xanchor": "center",
-    #     },
-    #     height=700,
-    #     mapbox={
-    #         "accesstoken": st.secrets["mapbox_token"],
-    #         "style": "streets",
-    #         "zoom": 10,
-    #         # "bounds": {"west": 103.5, "east": 104.2, "north": 1.55, "south": 1.15} # not working locally
-    #     },
-    #     coloraxis_colorbar_y=0.64,
-    # )
-
-    # st.plotly_chart(transaction_map_plot, use_container_width=True)
+        - The planning areas are coloured based on the median age of the property at the point of transaction.
+        """
+    )
+    st.plotly_chart(transaction_map_plot, use_container_width=True)
 
 with st.container():
-    row2_tab1, row2_tab2 = st.tabs(["Resale Price Index", "Median Resale Price"])
+    row2_tab1, row2_tab2, row2_tab3 = st.tabs(["Resale Price Index", "Median Resale Price", "Million Dollar Flats"])
     st.markdown("---")
 
 transactions_base = (
@@ -542,81 +545,109 @@ with row2_tab2:
     st.altair_chart(median_price_plot,use_container_width=True)
     st.markdown("^ Median price across all flat types and models.")
 
-with st.container():
-    st.markdown("Click to filter by flat types, hold shift to select multiple options.")
-    selector = alt.selection_multi(empty="all", fields=["flat_type"])
-
-    flat_base = alt.Chart(
-        flat_type_df,
-    ).add_selection(selector)
-
-    flat_type_plot = (
-        flat_base.mark_bar()
-        .encode(
-            alt.X("count()", axis=alt.Axis(title="Transactions")),
-            alt.Y("flat_type:N", axis=alt.Axis(title="Flat Type")),
-            color=alt.condition(
-                selector, "flat_type:N", alt.value("lightgray"), legend=None
-            ),
-            tooltip=[
-                alt.Tooltip("flat_type", title="Flat Type"),
-                alt.Tooltip("count()", title="Transactions", format=","),
-            ],
-        )
-        .properties(height=300, width=400, title="Transactions by Flat Type")
-    )
-
-    floor_area_plot = (
-        flat_base.mark_bar(opacity=0.8, binSpacing=0)
-        .encode(
-            alt.X(
-                "floor_area_sqm:Q",
-                bin=alt.Bin(step=5),
-                axis=alt.Axis(title="Floor Area (sqm)"),
-            ),
-            alt.Y("count()", stack=None, axis=alt.Axis(title="Count")),
-            alt.Color("flat_type:N", legend=None),
-        )
-        .transform_filter(selector)
-        .properties(height=300, width=400, title="Distribution of Floor Area by Flat Type")
-    )
-
-    # use_container_width currently does not seem to work for concatenated charts
-    st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
-    st.markdown("\* Includes Multi-Generation flats")
-
-with st.container():
-    # scatter_range_x = get_scale(scatter_df["floor_area_sqm"])
-    # scatter_range_y = get_scale(scatter_df["storey_range"].as_ordered())
-
-    scatter_plot = px.density_heatmap(
-        scatter_df,
-        x="floor_area_sqm",
-        y="storey_range",
-        z="resale_price",
-        histfunc="avg",
-    )
-
-    scatter_plot.update_layout(
-        title={
-            "text": f"Effects of Floor Area and Storey Range on Resale Price",
-            # "x": 0.5,
-            "xanchor": "left",
+million_dollar_scatter = px.scatter(
+        df_filtered.query("resale_price >= 1_000_000"),
+        x="date",
+        y="resale_price",
+        color="floor_area_sqm",
+        title="address",
+        hover_name="address",
+        hover_data={
+            "date": "|%b %Y",
+            "resale_price": ":$,",
         },
-        xaxis_title="Floor Area (sqm)",
-        yaxis_title="Storey Range",
-        height=500,
-        coloraxis_colorbar={
-            "title": "Average Resale Price",
-            "y": 0.5,
-            "yanchor": "middle",
-            "len": 1,
-            "ypad": 0,
-            "xpad": 0
+        labels={
+            "date": "Transaction Date", "resale_price": "Resale Price", "floor_area_sqm": "Floor Area (sqm)"
         }
     )
 
+million_dollar_scatter.update_layout(
+    title="Million Dollar Resale Transactions",
+    xaxis_title="Transaction Date",
+    yaxis_title="Resale Price (S$)",
+    coloraxis_colorbar={
+        "title": "Floor Area (sqm)",
+        "y": 0.5,
+        "yanchor": "middle",
+        "len": 1,
+        "ypad": 0,
+        "xpad": 0
+    }
+)
 
+with row2_tab3:
+    st.plotly_chart(million_dollar_scatter, use_container_width=True)
 
-    st.plotly_chart(scatter_plot, use_container_width=True)
+flat_type_selector = alt.selection_multi(empty="all", fields=["flat_type"])
+
+flat_base = alt.Chart(
+    flat_type_df,
+).add_selection(flat_type_selector)
+
+flat_type_plot = (
+    flat_base.mark_bar()
+    .encode(
+        alt.X("count()", axis=alt.Axis(title="Transactions")),
+        alt.Y("flat_type:N", axis=alt.Axis(title="Flat Type")),
+        color=alt.condition(
+            flat_type_selector, "flat_type:N", alt.value("lightgray"), legend=None
+        ),
+        tooltip=[
+            alt.Tooltip("flat_type", title="Flat Type"),
+            alt.Tooltip("count()", title="Transactions", format=","),
+        ],
+    )
+    .properties(height=300, width=400, title="Transactions by Flat Type")
+)
+
+floor_area_plot = (
+    flat_base.mark_bar(opacity=0.8, binSpacing=0)
+    .encode(
+        alt.X(
+            "floor_area_sqm:Q",
+            bin=alt.Bin(step=5),
+            axis=alt.Axis(title="Floor Area (sqm)"),
+        ),
+        alt.Y("count()", stack=None, axis=alt.Axis(title="Count")),
+        alt.Color("flat_type:N", legend=None),
+    )
+    .transform_filter(flat_type_selector)
+    .properties(height=300, width=400, title="Distribution of Floor Area by Flat Type")
+)
+
+with st.container():
+    st.markdown("Click to filter by flat types, hold shift to select multiple options.")
+    # use_container_width currently does not seem to work for concatenated charts
+    st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
+    st.markdown("\* Includes Multi-Generation flats")
+    st.markdown("---")
+
+density_heatmap_plot = px.density_heatmap(
+    density_heatmap_df,
+    x="floor_area_sqm",
+    y="storey_range",
+    z="resale_price",
+    histfunc="avg",
+)
+
+density_heatmap_plot.update_layout(
+    title={
+        "text": f"Effects of Floor Area and Storey Range on Resale Price",
+        "xanchor": "left",
+    },
+    xaxis_title="Floor Area (sqm)",
+    yaxis_title="Storey Range",
+    height=500,
+    coloraxis_colorbar={
+        "title": "Average Resale Price",
+        "y": 0.5,
+        "yanchor": "middle",
+        "len": 1,
+        "ypad": 0,
+        "xpad": 0
+    }
+)
+
+with st.container():
+    st.plotly_chart(density_heatmap_plot, use_container_width=True)
     st.markdown("---")

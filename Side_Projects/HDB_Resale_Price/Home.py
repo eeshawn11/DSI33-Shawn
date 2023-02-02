@@ -12,6 +12,7 @@ resource_ids = [
     "f1765b54-a209-4718-8d38-a39237f502b3", # from Jan 2017 onwards
     "1b702208-44bf-4829-b620-4615ee19b57c", # 2015 - 2016
     "83b2fc37-ce8c-4df4-968b-370fd818138b", # Mar 2012 - 2014
+    "8c00bf08-9124-479e-aeca-7cc411d884c4", # 2000 - Feb 2012
 ]
 
 path = os.path.dirname(__file__)
@@ -20,7 +21,7 @@ def retrieve_data(resource_id: str, n: int):
     url_string = f"https://data.gov.sg/api/action/datastore_search?resource_id={resource_id}&limit={n}"
     try:
         response = requests.get(
-            url_string, headers={"User-Agent": "Mozilla/5.0"}, timeout=10
+            url_string, headers={"User-Agent": "Mozilla/5.0"}, timeout=20
         ).json()
         if response["success"] == True:
             print("Call success")
@@ -52,7 +53,7 @@ def get_data():
     return content
 
 
-@st.experimental_memo(max_entries=1)
+# @st.experimental_memo(max_entries=1)
 def get_coords_df():
     return pd.read_csv(
         path+"/assets/hdb_coords.csv",
@@ -124,7 +125,7 @@ with st.sidebar:
     )
 
 with st.container():
-    st.title("Singapore HDB Resale Price from 2012")
+    st.title("Singapore HDB Resale Price from 2000")
     st.markdown(
         """
         This dashboard is inspired by [Inside Airbnb](http://insideairbnb.com/) and various other dashboards I've come across on the web. 
@@ -160,7 +161,7 @@ with st.container():
         since 2001. As the name suggests, the scheme allows the government to build based on actual demand, requiring new developments to meet 
         a minimum application rate before a tender for construction is called. This generally requires a waiting period of around 3 - 4 years for completion.
 
-        However, 2 years of stoppages and disruptions during COVID caused delays to various projects, lengthening the wait time to around 5 years. This  
+        However, 2 years of stoppages and disruptions during COVID caused delays to various projects, lengthening the wait time to around 5 years. This
         caused many people to turn to the resale market instead. Since these are existing developments, resale transactions can usually be expected to 
         complete within 6 months or so, which is a significant reduction in wait time. This surge in demand has also caused a sharp increase in resale prices,
         with many flats even crossing the S$1 million mark.
@@ -180,13 +181,15 @@ with st.container():
         The dataset provides key information regarding the resale transactions since 2012, including location, flat type and lease information. The information 
         is generally clean, although we will still need to perform some transformations for use in our visualisations.
 
-        > Notes from the dataset:
-        > The data is based on the date of registration for the resale transactions, and exclude any transactions that may not reflect the full market price such
-        > as resale between relatives or resale of part shares.
+        Notes from the dataset:
+        
+        > - The data excludes any transactions that may not reflect the full market price such as resale between relatives or resale of part shares.
+        >
+        > - Transactions from March 2012 onwards are based on the date of registration, while those before are based on the date of approval.
         """
     )
     st.markdown(
-        f"Checking the shape of the dataframe, we currently have `{df.shape[0]:,}` rows, each of which represents a unique resale transaction based on the date of registration. "
+        f"Checking the shape of the dataframe, we currently have `{df.shape[0]:,}` rows, each of which represents a unique resale transaction."
     )
 
 st.markdown("---")
@@ -219,7 +222,7 @@ with st.container():
         - Combining `block` and `street_name` into a new `address` column, I then utilised a free [OneMap API](https://www.onemap.gov.sg/docs/) provided by the Singapore Land Authority to retrieve the `latitude` and `longitude` coordinates of these addresses for plotting onto a map.
         - The older datasets did not include a `remaining_lease` column, but it's easy to calculate based on the standard 99-year HDB leases.
         - The `town` column does not correspond fully to the planning areas within the choropeth, so we'll check and rename towns within the dataset based the choropeth.        
-        - There are some transactions in HDB blocks that have since been [reacquired]((https://www.hdb.gov.sg/residential/living-in-an-hdb-flat/sers-and-upgrading-programmes/sers/sers-projects/completed-sers-projects)) by the state, such as 1A & 2A Woodlands Centre Road, which did not show up in the OneMap API, but interestingly are still appearing in Google Maps.
+        - There are transactions in HDB blocks that have since been [reacquired]((https://www.hdb.gov.sg/residential/living-in-an-hdb-flat/sers-and-upgrading-programmes/sers/sers-projects/completed-sers-projects)) by the state, such as 1A & 2A Woodlands Centre Road, which do not show up in the OneMap API, but interestingly are still appearing in Google Maps. This meant having to extract a list of these locations and looking up their *approximate* location manually.
         """
     )
 
