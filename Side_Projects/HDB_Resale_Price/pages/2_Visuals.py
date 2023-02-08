@@ -181,67 +181,7 @@ flat_type_df = df_filtered[["flat_type", "floor_area_sqm"]].copy()
 flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("MULTI-GENERATION", "EXECUTIVE")
 flat_type_df["flat_type"] = flat_type_df["flat_type"].str.replace("EXECUTIVE", "EXECUTIVE*")
 
-with st.container():
-    st.title("Singapore HDB Resale Price from 2000")
-
-with st.container():
-    st.markdown(f"## {year_option} transactions in {town_option}")
-    st.markdown("### Key Metrics")
-    # row 1
-    met1, met2, met3 = st.columns(3)
-    met1.metric(
-        label="Total Resale Transactions",
-        value=f"{df_filtered['resale_price'].count():,}",
-        help="Total resale transactions during this period",
-        delta=get_delta("resale_price", "count")
-    )
-    met2.metric(
-        label="Total Transaction Value",
-        value=f'S${numerize(df_filtered["resale_price"].sum().item())}',
-        help="Total value of all transactions during this period",
-        delta=get_delta("resale_price", "sum")
-    )
-    met3.metric(
-        label="Million Dollar Flats",
-        value=f"{million_dollar_flats_df['address'].count():,}",
-        help="Total Million Dollar Flats transacted during this period"
-    )
-    # row 2
-    met4, met5, met6 = st.columns(3)
-    met4.metric(
-        label="Lowest Price",
-        value=f'S${df_filtered["resale_price"].min():,}',
-        help="Lowest resale transaction price during this period",
-        delta=get_delta("resale_price", "min"),        
-        delta_color="inverse",
-    )
-    met5.metric(
-        label="Highest Price",
-        value=f'S${numerize(df_filtered["resale_price"].max())}',
-        help="Highest resale transaction price during this period",
-        delta=get_delta("resale_price", "max"),
-        delta_color="inverse",
-    )
-    met6.metric(
-        label="Median Price",
-        value=f'S${int(df_filtered["resale_price"].median()):,}',
-        help="Median price of all transactions during this period",
-        delta=get_delta("resale_price", "median"),
-        delta_color="inverse",
-    )
-
-st.markdown("---")
-
-
-###
-# WIP - create individual trace layers for $m flats by year?
-# show / hide choropeth layer?
-# include buttons to change mapbox style? added buttons but not working
-###
-with st.container():
-    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Property Age"])
-    st.markdown("---")
-
+## choropleth
 median_map_plot = px.choropleth_mapbox(
     choropleth_df,
     geojson=st.session_state.geo_df,
@@ -258,9 +198,7 @@ median_map_plot = px.choropleth_mapbox(
         "resale_price": ":,"
     },
     labels={"town": "Town", "transactions": "Transactions", "resale_price": "Median Resale Price"},
-)
-
-median_map_plot.update_layout(
+).update_layout(
     title={
         "text": f"{year_option} Median Resale Price by Town",
         "xanchor": "left",
@@ -371,18 +309,6 @@ median_map_plot.update_layout(
     ],
 )
 
-with row1_tab1:
-    st.markdown(
-        """
-        A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
-        
-        - The planning areas are coloured based on the median resale price in each area during the selected time period.
-        - Stars on the map represent transactions that have crossed the coveted S$1 million threshold.
-        - Toggle between Median Price or Transactions count overlay with the buttons below the map. (WIP)
-        """
-    )
-    st.plotly_chart(median_map_plot, use_container_width=True)
-
 transaction_map_plot = px.choropleth_mapbox(
     choropleth_df,
     geojson=st.session_state.geo_df,
@@ -399,9 +325,7 @@ transaction_map_plot = px.choropleth_mapbox(
         "resale_price": ":,",
     },
     labels={"town": "Town", "age": "Median Age", "resale_price": "Median Resale Price"},
-)
-
-transaction_map_plot.update_layout(
+).update_layout(
     title={
         "text": f"{year_option} Median Age of Property at Transaction",
         "x": 0.5,
@@ -424,20 +348,7 @@ transaction_map_plot.update_layout(
     }
 )
 
-with row1_tab2:
-    st.markdown(
-        """
-        A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
-        
-        - The planning areas are coloured based on the median age of the property at the point of transaction.
-        """
-    )
-    st.plotly_chart(transaction_map_plot, use_container_width=True)
-
-with st.container():
-    row2_tab1, row2_tab2, row2_tab3 = st.tabs(["Resale Price Index", "Median Resale Price", "Million Dollar Flats"])
-    st.markdown("---")
-
+## line plots
 transactions_base = (
     alt.Chart(resale_transactions_df, title="Total Transactions per Month")
     .mark_line(
@@ -537,58 +448,6 @@ median_price_base = (
 median_price_selector, median_price_rule = add_marker(median_price_base, alt_nearest, "resale_price", "Median Resale Price", "$,")
 median_price_plot = median_price_base + median_price_selector + median_price_rule
 
-with row2_tab1:
-    # show line at price index = 100
-    if resale_transactions_df.price_index.min() <= 100 and resale_transactions_df.price_index.max() >= 100:
-        resale_price_index_line = alt.Chart(
-            resale_transactions_df).mark_rule(color="gray", strokeDash=[4, 4], strokeOpacity=0.1).encode(y=alt.datum(100)
-            )
-        st.altair_chart(transactions_plot,use_container_width=True)
-        st.altair_chart(price_index_plot + resale_price_index_line,use_container_width=True)
-    else:
-        st.altair_chart(transactions_plot, use_container_width=True)
-        st.altair_chart(price_index_plot,use_container_width=True)
-    st.markdown("^ Base period is taken at Jan 2020 ($400k) across all towns and flat types, with index at 100")
-
-with row2_tab2:
-    st.altair_chart(transactions_plot,use_container_width=True)
-    st.altair_chart(median_price_plot,use_container_width=True)
-    st.markdown("^ Median price across all flat types and models.")
-
-million_dollar_scatter = px.scatter(
-        df_filtered.query("resale_price >= 1_000_000"),
-        x="date",
-        y="resale_price",
-        color="floor_area_sqm",
-        title="address",
-        hover_name="address",
-        hover_data={
-            "date": "|%b %Y",
-            "resale_price": ":$,",
-        },
-        labels={
-            "date": "Transaction Date", "resale_price": "Resale Price", "floor_area_sqm": "Floor Area (sqm)"
-        }
-    )
-
-million_dollar_scatter.update_layout(
-    title="Million Dollar Resale Transactions",
-    xaxis_title="Transaction Date",
-    yaxis_title="Resale Price (S$)",
-    height=350,
-    coloraxis_colorbar={
-        "title": "Floor Area (sqm)",
-        "y": 0.5,
-        "yanchor": "middle",
-        "len": 1,
-        "ypad": 0,
-        "xpad": 0
-    }
-)
-
-with row2_tab3:
-    st.plotly_chart(million_dollar_scatter, use_container_width=True)
-
 flat_type_selector = alt.selection_multi(empty="all", fields=["flat_type"])
 
 flat_base = alt.Chart(
@@ -623,15 +482,41 @@ floor_area_plot = (
         alt.Color("flat_type:N", legend=None),
     )
     .transform_filter(flat_type_selector)
-    .properties(height=250, width=400, title="Distribution of Floor Area by Flat Type")
+    .properties(
+        height=250, 
+        width=400, 
+        title="Distribution of Floor Area by Flat Type"
+    )
 )
 
-with st.container():
-    st.markdown("Click to filter by flat types, hold shift to select multiple options.")
-    # use_container_width currently does not seem to work for concatenated charts
-    st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
-    st.markdown("\* Includes Multi-Generation flats")
-    st.markdown("---")
+million_dollar_scatter = px.scatter(
+        df_filtered.query("resale_price >= 1_000_000"),
+        x="date",
+        y="resale_price",
+        color="floor_area_sqm",
+        title="address",
+        hover_name="address",
+        hover_data={
+            "date": "|%b %Y",
+            "resale_price": ":$,",
+        },
+        labels={
+            "date": "Transaction Date", "resale_price": "Resale Price", "floor_area_sqm": "Floor Area (sqm)"
+        }
+    ).update_layout(
+    title="Million Dollar Resale Transactions",
+    xaxis_title="Transaction Date",
+    yaxis_title="Resale Price (S$)",
+    height=350,
+    coloraxis_colorbar={
+        "title": "Floor Area (sqm)",
+        "y": 0.5,
+        "yanchor": "middle",
+        "len": 1,
+        "ypad": 0,
+        "xpad": 0
+    }
+)
 
 density_heatmap_plot = px.density_heatmap(
     density_heatmap_df,
@@ -639,16 +524,14 @@ density_heatmap_plot = px.density_heatmap(
     y="storey_range",
     z="resale_price",
     histfunc="avg",
-)
-
-density_heatmap_plot.update_layout(
+).update_layout(
     title={
         "text": f"Effects of Floor Area and Storey Range on Resale Price",
         "xanchor": "left",
     },
     xaxis_title="Floor Area (sqm)",
     yaxis_title="Storey Range",
-    height=350,
+    height=400,
     coloraxis_colorbar={
         "title": "Average Resale Price",
         "y": 0.5,
@@ -658,6 +541,121 @@ density_heatmap_plot.update_layout(
         "xpad": 0
     }
 )
+
+with st.container():
+    st.title("Singapore HDB Resale Price from 2000")
+
+with st.container():
+    st.markdown(f"## {year_option} transactions in {town_option}")
+    st.markdown("### Key Metrics")
+    # row 1
+    met1, met2, met3 = st.columns(3)
+    met1.metric(
+        label="Total Resale Transactions",
+        value=f"{df_filtered['resale_price'].count():,}",
+        help="Total resale transactions during this period",
+        delta=get_delta("resale_price", "count")
+    )
+    met2.metric(
+        label="Total Transaction Value",
+        value=f'S${numerize(df_filtered["resale_price"].sum().item())}',
+        help="Total value of all transactions during this period",
+        delta=get_delta("resale_price", "sum")
+    )
+    met3.metric(
+        label="Million Dollar Flats",
+        value=f"{million_dollar_flats_df['address'].count():,}",
+        help="Total Million Dollar Flats transacted during this period"
+    )
+    # row 2
+    met4, met5, met6 = st.columns(3)
+    met4.metric(
+        label="Lowest Price",
+        value=f'S${df_filtered["resale_price"].min():,}',
+        help="Lowest resale transaction price during this period",
+        delta=get_delta("resale_price", "min"),        
+        delta_color="inverse",
+    )
+    met5.metric(
+        label="Highest Price",
+        value=f'S${numerize(df_filtered["resale_price"].max())}',
+        help="Highest resale transaction price during this period",
+        delta=get_delta("resale_price", "max"),
+        delta_color="inverse",
+    )
+    met6.metric(
+        label="Median Price",
+        value=f'S${int(df_filtered["resale_price"].median()):,}',
+        help="Median price of all transactions during this period",
+        delta=get_delta("resale_price", "median"),
+        delta_color="inverse",
+    )
+
+st.markdown("---")
+
+
+###
+# WIP - create individual trace layers for $m flats by year?
+# show / hide choropeth layer?
+# include buttons to change mapbox style? added buttons but not working
+###
+with st.container():
+    row1_tab1, row1_tab2 = st.tabs(["Median Resale Price", "Property Age"])
+    st.markdown("---")
+
+with row1_tab1:
+    st.markdown(
+        """
+        A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
+        
+        - The planning areas are coloured based on the median resale price in each area during the selected time period.
+        - Stars on the map represent transactions that have crossed the coveted S$1 million threshold.
+        - Toggle between Median Price or Transactions count overlay with the buttons below the map. (WIP)
+        """
+    )
+    st.plotly_chart(median_map_plot, use_container_width=True)
+
+with row1_tab2:
+    st.markdown(
+        """
+        A choropleth map based on the boundary lines provided by the URA 2014 Master Plan Planning Areas. 
+        
+        - The planning areas are coloured based on the median age of the property at the point of transaction.
+        """
+    )
+    st.plotly_chart(transaction_map_plot, use_container_width=True)
+
+with st.container():
+    row2_tab1, row2_tab2, row2_tab3 = st.tabs(["Resale Price Index", "Median Resale Price", "Million Dollar Flats"])
+    st.markdown("---")
+
+with row2_tab1:
+    # show line at price index = 100
+    if resale_transactions_df.price_index.min() <= 100 and resale_transactions_df.price_index.max() >= 100:
+        resale_price_index_line = alt.Chart(
+            resale_transactions_df).mark_rule(color="gray", strokeDash=[4, 4], strokeOpacity=0.1).encode(y=alt.datum(100)
+            )
+        st.altair_chart(transactions_plot,use_container_width=True)
+        st.altair_chart(price_index_plot + resale_price_index_line,use_container_width=True)
+    else:
+        st.altair_chart(transactions_plot, use_container_width=True)
+        st.altair_chart(price_index_plot,use_container_width=True)
+    st.markdown("^ Base period is taken at Jan 2020 ($400k) across all towns and flat types, with index at 100")
+
+with row2_tab2:
+    st.altair_chart(transactions_plot,use_container_width=True)
+    st.altair_chart(median_price_plot,use_container_width=True)
+    st.markdown("^ Median price across all flat types and models.")
+
+with row2_tab3:
+    st.plotly_chart(million_dollar_scatter, use_container_width=True)
+
+with st.container():
+    st.markdown("Click to filter by flat types, hold shift to select multiple options.")
+    # use_container_width currently does not seem to work for concatenated charts
+    st.altair_chart(flat_type_plot | floor_area_plot, use_container_width=True)
+    st.markdown("\* Includes Multi-Generation flats")
+    st.markdown("---")
 
 with st.container():
     st.plotly_chart(density_heatmap_plot, use_container_width=True)
