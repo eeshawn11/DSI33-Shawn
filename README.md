@@ -18,7 +18,7 @@ Creating a classification model that predicts the presence of West Nile virus to
 
 Using NLP to create a classification model that is able to accurately classify a Reddit.com post between two subreddits: r/codingbootcamp and r/csMajors. Achieved an F1-score of 93% and deployed a demonstration web app via [streamlit](https://eeshawn-nlp-classifier.streamlit.app).
 
-#### Skills demonstrated:
+**Skills Demonstrated:**
 
 - Data extraction with [Pushshift API](https://github.com/pushshift/api) and `requests`
 - Natural Language Processing using `NLTK` and `RegEx`
@@ -30,7 +30,7 @@ Using NLP to create a classification model that is able to accurately classify a
 
 Training and developing a regression model to predict the housing price of a property in Ames, Iowa. Achieved a 84.44% R2 using a Lasso Regression model.
 
-#### Skills demonstrated:
+**Skills Demonstrated:**
 
 - Feature Engineering and Selection with over 80 features in the dataset
 - Regression models with `scikit-learn`, e.g. Linear, Lasso, Ridge
@@ -40,7 +40,7 @@ Training and developing a regression model to predict the housing price of a pro
 
 An exploratory analysis into SAT 2019 performance in the state of California, United States, to identify districts with the lowest overall student performance so the California Department of Education can recommend programs and better allocate resources to such districts in need.
 
-#### Skills demonstrated:
+**Skills Demonstrated:**
 
 - Exploratory Data Analysis with `pandas`
 - Data Visualisation with `matplotlib` and `seaborn`
@@ -53,7 +53,7 @@ Training and deploying a machine learning model that can recognise 12 basic hand
 
 While the model appears to be able to detect and recognise the hand seals that I am making, it also recognises my face as a "rat" seal, so perhaps there's more to be done to overcome this. Next step would also include deploying the model online, so you could also give it a try!
 
-#### Skills demonstrated:
+**Skills Demonstrated:**
 
 - Collecting and building my own dataset using `OpenCV` and annotating the collected images with `LabelImg`
 - Transfer learning using a pre-trained network with `TensorFlow` Object Detection API
