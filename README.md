@@ -47,18 +47,6 @@ An exploratory analysis into SAT 2019 performance in the state of California, Un
 
 ---
 
-### [HDB Resale Price Dashboard](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/HDB_Resale_Price) [WIP]
-
-Exploration of a data set from [Data.gov.sg](https://data.gov.sg/), in particular HDB resale prices from 2012, to create an interactive dashboard. I am also hopeful that any insights gleaned could be helpful to my own HDB purchase journey.
-
-This is an ongoing project to document my learning with using Streamlit and various Python libraries. While such a dashboard could perhaps be more easily created using PowerBI or Tableau, I am also taking the opportunity to explore the various Python plotting libraries and understand their documentation.
-
-#### Skills demonstrated:
-
-- Data extraction from live Data.gov.sg API
-- Data visualisation with `Vega-Altair` and `Plotly`
-- Python web app deployment with [`streamlit`](https://eeshawn-hdb-resale.streamlit.app/)
-
 ### [Naruto Hand Seals - Gesture Recognition](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/Naruto_Gesture_Recognition) [WIP]
 
 Training and deploying a machine learning model that can recognise 12 basic hand seals from the Naruto anime using TensorFlow's Object Detection API.
