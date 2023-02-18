@@ -131,9 +131,7 @@ dmypy.json
 
 .vscode
 Kaggle
-Side_Projects/HDB_Resale_Price/test.ipynb
 Side_Projects/Review_Generator/corpus
 Tensorflow
 *.json
-Capstone
 *.toml
