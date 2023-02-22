@@ -44,16 +44,3 @@ An exploratory analysis into SAT 2019 performance in the state of California, Un
 
 - Exploratory Data Analysis with `pandas`
 - Data Visualisation with `matplotlib` and `seaborn`
-
----
-
-### [Naruto Hand Seals - Gesture Recognition](https://github.com/eeshawn11/DSI33-Shawn/tree/main/Side_Projects/Naruto_Gesture_Recognition) [WIP]
-
-Training and deploying a machine learning model that can recognise 12 basic hand seals from the Naruto anime using TensorFlow's Object Detection API.
-
-While the model appears to be able to detect and recognise the hand seals that I am making, it also recognises my face as a "rat" seal, so perhaps there's more to be done to overcome this. Next step would also include deploying the model online, so you could also give it a try!
-
-**Skills Demonstrated:**
-
-- Collecting and building my own dataset using `OpenCV` and annotating the collected images with `LabelImg`
-- Transfer learning using a pre-trained network with `TensorFlow` Object Detection API
