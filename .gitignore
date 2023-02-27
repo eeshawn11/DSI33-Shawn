@@ -131,7 +131,6 @@ dmypy.json
 
 .vscode
 Kaggle
-Side_Projects/Review_Generator/corpus
 Tensorflow
 *.json
 *.toml
