@@ -76,10 +76,11 @@ def get_top_N_features(_pipe, text):
 with st.sidebar:
     st.markdown(
         """
-        Created by Shawn
+        Created by [**eeshawn**](https://eeshawn.com)
 
-        - Happy to connect on [LinkedIn](https://www.linkedin.com/in/shawn-sing/)
-        - Check out my other projects on [GitHub](https://github.com/eeshawn11/)
+        - Connect on [**LinkedIn**](https://www.linkedin.com/in/shawn-sing/)
+        - Project source [**code**](https://github.com/eeshawn11/HDB_Resale_Dashboard/)
+        - Check out my other projects on [**GitHub**](https://github.com/eeshawn11/)
         """
         )
 
